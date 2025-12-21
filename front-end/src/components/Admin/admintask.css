@@ -1,0 +1,173 @@
+.adminTaskContainer {
+  font-family: Arial, sans-serif;
+  background-color: #fff;
+  color: #000;
+  min-height: 100vh;
+  padding: 24px 16px;
+}
+
+/* Header */
+.headerTitle {
+  color: #000;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+/* Statistic container: dùng flexbox chia đều */
+.statContainer {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 32px;
+}
+
+.statCard {
+  flex: 1; /* chia đều */
+  padding: 20px 16px;
+  border-radius: 8px;
+  min-height: 100px;
+  background-color: #fff;
+  border: 1px solid #222;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  color: #000;
+  transition: box-shadow 0.2s ease;
+  cursor: default;
+}
+
+.statCard:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+}
+
+/* Màu chữ cho số lượng để tạo điểm nhấn nhẹ */
+.statCount {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #000;
+}
+
+/* Các thẻ thống kê không phân biệt màu nền, chỉ phân biệt màu text nhẹ */
+.totalTasks {
+  border-color: #000;
+}
+
+.completedTasks {
+  border-color: #111;
+}
+
+.inProgressTasks {
+  border-color: #333;
+}
+
+.pendingTasks {
+  border-color: #555;
+}
+
+/* Hộp thông báo khi chưa có nhiệm vụ */
+.emptyTaskBox {
+  padding: 48px 20px;
+  margin-top: 48px;
+  text-align: center;
+  border: 1px solid #444;
+  border-radius: 12px;
+  color: #444;
+  background-color: #fafafa;
+  user-select: none;
+}
+
+.emptyTaskIcon {
+  display: inline-block;
+  margin-bottom: 12px;
+  font-size: 48px;
+  color: #555;
+}
+
+/* Danh sách task item */
+.taskItem {
+  padding: 14px 20px;
+  margin-bottom: 12px;
+  background-color: #fff;
+  border: 1px solid #222;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  color: #000;
+  transition: box-shadow 0.2s ease;
+}
+
+.taskItem:hover {
+  box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+}
+
+.taskItem > div {
+  max-width: 90%;
+}
+
+.taskItem strong {
+  color: #000;
+}
+
+/* Task info typography */
+.taskItem .MuiTypography-root {
+  margin-bottom: 4px;
+  color: #222;
+}
+
+/* Form Dialog custom style */
+
+.MuiDialogTitle-root {
+  font-weight: 700;
+  color: #000;
+  border-bottom: 1px solid #222;
+}
+
+.MuiDialogContent-root {
+  background-color: #fff;
+  color: #000;
+  padding-top: 16px !important;
+}
+
+.MuiDialogActions-root {
+  border-top: 1px solid #222;
+  padding: 16px 24px !important;
+}
+
+/* --- Bỏ qua phần chỉnh style input/select/textarea để giữ nguyên style cũ --- */
+
+/* Button styles */
+.MuiButton-root {
+  background-color: #000 !important;
+  color: #fff !important;
+  text-transform: none !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+.MuiButton-root:hover {
+  background-color: #333 !important;
+}
+
+/* Responsive tweaks */
+
+@media (max-width: 600px) {
+  .statContainer {
+    flex-direction: column;
+  }
+  .statCard {
+    margin-bottom: 16px;
+  }
+}
+
+/* Scrollbar for dropdown if needed */
+.MuiMenu-list {
+  max-height: 300px;
+  overflow-y: auto;
+}

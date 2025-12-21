@@ -1,0 +1,106 @@
+.admin-container {
+  background-color: #fff;
+  color: #000;
+  font-family: 'Roboto', sans-serif;
+  padding: 16px;
+}
+
+.tabs-wrapper {
+  border-bottom: 1px solid #000;
+  margin-bottom: 16px;
+}
+
+.tabs .MuiTabs-indicator {
+  background-color: #000;
+}
+
+.tabs .MuiTab-root {
+  color: #000;
+  text-transform: none;
+  font-weight: 600;
+}
+
+.content {
+  width: 100%;
+}
+
+.toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.search-input .MuiOutlinedInput-root {
+  background-color: #fff;
+  border: 1px solid #000;
+}
+
+.role-select .MuiOutlinedInput-root {
+  background-color: #fff;
+  border: 1px solid #000;
+}
+
+.add-user-btn {
+  background-color: #0052cc;
+  color: #fff;
+  text-transform: none;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.add-user-btn:hover {
+  background-color: #003d99;
+}
+
+.table-container {
+  border: 1px solid #000;
+  border-radius: 4px;
+  padding: 16px;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+}
+
+.table-header {
+  /* This defines the grid for the header, and now the header divs will follow it */
+  grid-template-columns: 3fr 1fr 1fr 1fr;
+  font-weight: 700;
+  border-bottom: 1px solid #000;
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+  display: grid;
+}
+
+.user-list-item {
+  display: flex; /* Ensure it uses flex for column distribution */
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee; /* Light separator for list items */
+}
+
+.empty-state {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  color: #000;
+}
+
+.empty-icon {
+  font-size: 48px;
+}
+
+.empty-title {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.empty-desc {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 16px;
+}

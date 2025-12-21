@@ -1,0 +1,131 @@
+.timeline-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #f0f2f5; /* Light background similar to image */
+  color: #333;
+  font-family: Arial, sans-serif;
+  overflow: hidden; /* To handle internal scrolling */
+}
+
+.timeline-header {
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  background: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  gap: 10px;
+}
+
+.timeline-header .MuiButton-root {
+  text-transform: none;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+.timeline-header .MuiButton-contained {
+  background-color: #5e35b1; /* A shade of purple for primary actions */
+  color: white;
+}
+
+.timeline-header .MuiButton-outlined {
+  border-color: #d0d0d0;
+  color: #555;
+}
+
+.timeline-header .MuiAvatar-root {
+  border: 2px solid white;
+}
+
+.timeline-content-area {
+  display: flex;
+  flex: 1; /* Allows it to take remaining height */
+  overflow: hidden; /* Important for internal scrolling */
+}
+
+.timeline-categories {
+  width: 250px; /* Fixed width for the category sidebar */
+  background: #ffffff;
+  padding: 20px 0;
+  border-right: 1px solid #e0e0e0;
+  overflow-y: auto; /* Scroll if categories exceed height */
+  flex-shrink: 0; /* Prevent shrinking */
+}
+
+.timeline-category-item {
+  padding: 10px 20px;
+  border-bottom: 1px dashed #f0f0f0;
+  position: relative;
+}
+
+.timeline-category-item:last-child {
+  border-bottom: none;
+}
+
+.timeline-grid {
+  flex: 1; /* Takes up remaining space */
+  display: flex;
+  flex-direction: column;
+  overflow-x: auto; /* Horizontal scroll for the timeline */
+  overflow-y: auto; /* Vertical scroll for task rows if many */
+  position: relative;
+  background: #ffffff;
+}
+
+.timeline-day-headers {
+  display: flex;
+  position: sticky; /* Sticky header for days */
+  top: 0;
+  background: #ffffff;
+  z-index: 10;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.day-header {
+  min-width: 50px; /* Adjust based on dayWidth in JS */
+  padding: 10px 0;
+  text-align: center;
+  font-weight: bold;
+  font-size: 0.8em;
+  color: #888;
+  border-right: 1px dashed #f5f5f5;
+}
+
+.timeline-task-row {
+  display: flex;
+  position: relative; /* For positioning task bars */
+  min-height: 60px; /* Height for each row, adjust as needed */
+  border-bottom: 1px dashed #f5f5f5;
+  align-items: center; /* Vertically align tasks */
+}
+
+.timeline-task-bar {
+  position: absolute;
+  height: 30px; /* Height of the task bar */
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  white-space: nowrap;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  font-size: 0.8em;
+  color: white; /* Text color on bars */
+}
+
+.complete-task-popup {
+  position: fixed; /* Or absolute within a modal container */
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  width: 250px; /* Adjust as needed */
+  text-align: center;
+}
+
+/* Remove or adapt existing CSS as much of it won't be suitable */
+.container, .timeline, .sidebar, .card {
+  /* These styles are for the previous layout and should be largely replaced */
+}

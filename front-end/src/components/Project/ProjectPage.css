@@ -1,0 +1,50 @@
+.project-page-root {
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  background-color: #fff;
+  color: #000;
+}
+
+.project-header {
+  box-shadow: 0 4px 10px rgb(0 0 0 / 0.15);
+  border-radius: 10px;
+  text-align: center;
+}
+
+
+.project-card {
+  border-radius: 12px;
+  box-shadow: 0 6px 15px rgb(0 0 0 / 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+
+.project-card-header {
+  border-radius: 12px 12px 0 0;
+  min-height: 48px;
+}
+
+
+.project-card-footer {
+  min-height: 40px;
+}
+
+
+.project-card-body {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.MuiChip-root {
+  font-weight: 500;
+  text-transform: none;
+}
+
+.MuiIconButton-root {
+  color: #000;
+}
+
+.project-card-body .MuiTypography-root[title] {
+  cursor: pointer;
+  text-decoration: underline;
+}

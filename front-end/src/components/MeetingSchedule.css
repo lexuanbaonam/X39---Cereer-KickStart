@@ -1,0 +1,63 @@
+body {
+  background: #fff;
+  color: #000;
+}
+
+/* Tab giao diện */
+.MuiTabs-root,
+.MuiTab-root,
+.MuiTabs-indicator {
+  background: #fff;
+  color: #111;
+}
+
+/* Tab đang chọn */
+.Mui-selected {
+  color: #000 !important;
+  font-weight: bold;
+}
+
+/* Panel và form */
+.meeting-list,
+.request-form,
+.join-form {
+  background: #fff;
+  border: 2px solid #222;
+  border-radius: 8px;
+  color: #000;
+  box-shadow: none;
+}
+
+.request-form,
+.join-form {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Nút bấm */
+.MuiButton-contained {
+  background: #000 !important;
+  color: #fff !important;
+  border: none;
+}
+.MuiButton-contained:hover {
+  background: #333 !important;
+  color: #fff !important;
+}
+
+/* TextField */
+.MuiInputBase-root,
+.MuiInputBase-input {
+  color: #000;
+  background: #fff;
+}
+
+.MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline {
+  border-color: #222;
+}
+
+/* Tiêu đề và heading */
+.MuiTypography-h5 {
+  color: #111;
+}
