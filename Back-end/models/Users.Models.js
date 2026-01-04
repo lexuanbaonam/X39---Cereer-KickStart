@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
   jobPosition: [{ type: mongoose.Schema.Types.ObjectId, ref: 'JobPositions' }], // danh sách chức vụ - matches JobPositions model
 
   personalEmail: { type: String, unique: true, required: true },
-  companyEmail: { type: String, unique: true }, // Default to empty string if not provided
+  companyEmail: { type: String, unique: true }, 
   name: { type: String, required: true},
   roleTag: { type: String, enum: ['LEADER', 'MEMBER', 'ADMIN'], default: 'MEMBER' }, // phân quyền người dùng
   phoneNumber: { type: String, required: true},
