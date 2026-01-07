@@ -1,15 +1,18 @@
-import express from 'express';
+import express from "express";
 // import http from 'http';
-import mongoose from 'mongoose';
-import 'dotenv/config'
-import cors from 'cors';
-import rootRouter from './routes/index.js';
-import { Server } from 'socket.io';
-import { fileURLToPath } from 'url';
-import path from 'path';
+import mongoose from "mongoose";
+import "dotenv/config";
+import cors from "cors";
+import rootRouter from "./routes/index.js";
+import { Server } from "socket.io";
+import { fileURLToPath } from "url";
+import path from "path";
+import { connectDB } from "./services/db.connect.js";
 
 // import socketController from './controllers/Socket.Controllers.js';
 
+// Connect to MongoDB
+connectDB();
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,14 +20,14 @@ const __dirname = path.dirname(__filename);
 
 const corsOptions = {
   origin: process.env.CLIENT_URL,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Các phương thức HTTP được phép
-  allowedHeaders: ['Content-Type', 'Authorization'], // Các header được phép
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // Các phương thức HTTP được phép
+  allowedHeaders: ["Content-Type", "Authorization"], // Các header được phép
   accessControlAllowCredentials: true, // Cho phép cookie và thông tin xác thực
-}
+};
 
 app.use(express.json());
 app.use(cors(corsOptions));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // const io = new Server(server, {
 //   cors: corsOptions,
 //   pingTimeout: 60000,
@@ -37,13 +40,13 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // socketController(io);
 
 // Routes
-app.use('/api', rootRouter);
-app.get('/api', (req, res) => {
+app.use("/api", rootRouter);
+app.get("/api", (req, res) => {
   res.json({
-    message: 'API is working',
-    timestamp: new Date()
+    message: "API is working",
+    timestamp: new Date(),
   });
-})
+});
 
 // app.get('/health', (req, res) => {
 //   res.json({
@@ -63,13 +66,3 @@ app.get('/api', (req, res) => {
 //     path: req.originalUrl
 //   });
 // });
-
-
-// Kết nối MongoDB và chạy server
-mongoose.connect(process.env.MONGODB_URI|| 'mongodb+srv://Khoitran:jun2972007@cluster0.zdx8qrv.mongodb.net/Intern')
-  .then(() => {
-    app.listen(process.env.PORT, () => {
-      console.log(`🚀 Server chạy ở http://localhost:${process.env.PORT}`);
-    });
-  })
-  .catch(err => console.error('MongoDB lỗi:', err));
