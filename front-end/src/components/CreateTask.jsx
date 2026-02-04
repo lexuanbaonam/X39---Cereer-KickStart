@@ -17,14 +17,12 @@ import {
   Grid,
   Chip,
 } from '@mui/material';
-import { 
-  Save as SaveIcon, 
+import {
+  Save as SaveIcon,
   ArrowBack as ArrowBackIcon,
   Assignment as AssignmentIcon
 } from '@mui/icons-material';
-import axios from 'axios';
-
-const API_BASE_URL = 'https://back-end-hk2p.onrender.com/api';
+import axiosClient from '../api/axiosClient';
 
 const PRIORITY_OPTIONS = [
   { value: 'LOW', label: 'Thấp', color: '#4caf50' },
@@ -84,12 +82,8 @@ function CreateTask({ authToken, currentUser, setCurrentPage }) {
 
     setSprintsLoading(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}/sprint/all`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-      setSprints(response.data);
+      const data = await axiosClient.get('/sprint/all');
+      setSprints(data);
     } catch (err) {
       console.error('Lỗi khi tải danh sách sprint:', err);
       showSnackbar('Lỗi khi tải danh sách sprint. Vui lòng thử lại.', 'error');
@@ -108,7 +102,7 @@ function CreateTask({ authToken, currentUser, setCurrentPage }) {
       ...prev,
       [name]: value
     }));
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
@@ -139,14 +133,14 @@ function CreateTask({ authToken, currentUser, setCurrentPage }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    
+
     if (!validateForm()) {
       showSnackbar('Vui lòng điền đầy đủ thông tin bắt buộc', 'error');
       return;
     }
 
     setLoading(true);
-    
+
     try {
       const taskData = {
         title: formData.title.trim(),
@@ -155,14 +149,9 @@ function CreateTask({ authToken, currentUser, setCurrentPage }) {
         priority: formData.priority,
       };
 
-      const response = await axios.post(`${API_BASE_URL}/task`, taskData, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
+      const data = await axiosClient.post('/task', taskData);
 
-      if (response.data) {
+      if (data) {
         showSnackbar('Tạo công việc mới thành công!', 'success');
         // Reset form
         setFormData({
@@ -171,7 +160,7 @@ function CreateTask({ authToken, currentUser, setCurrentPage }) {
           sprint: '',
           priority: 'MEDIUM',
         });
-        
+
         // Redirect to tasks page or sprints page after a short delay
         setTimeout(() => {
           setCurrentPage('/sprints');
@@ -203,12 +192,12 @@ function CreateTask({ authToken, currentUser, setCurrentPage }) {
   // Show loading if waiting for user profile or sprints
   if (userLoading || sprintsLoading) {
     return (
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '80vh' 
+      <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '80vh'
       }}>
         <CircularProgress color="primary" />
         <Typography variant="h6" sx={{ mt: 2, color: theme.palette.text.secondary }}>
@@ -221,18 +210,18 @@ function CreateTask({ authToken, currentUser, setCurrentPage }) {
   // If no current user after loading, show error
   if (!currentUser) {
     return (
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '80vh' 
+      <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '80vh'
       }}>
         <Typography variant="h6" color="error" sx={{ mb: 2 }}>
           Không thể tải thông tin người dùng
         </Typography>
-        <Button 
-          variant="contained" 
+        <Button
+          variant="contained"
           onClick={() => setCurrentPage('/profile')}
         >
           Quay lại Profile
@@ -248,15 +237,15 @@ function CreateTask({ authToken, currentUser, setCurrentPage }) {
       margin: 'auto',
       mt: { xs: 2, sm: 3 },
     }}>
-      <Paper elevation={3} sx={{ 
-        p: { xs: 2, sm: 3 }, 
+      <Paper elevation={3} sx={{
+        p: { xs: 2, sm: 3 },
         borderRadius: 2,
-        bgcolor: theme.palette.background.paper 
+        bgcolor: theme.palette.background.paper
       }}>
         {/* Header */}
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+        <Box sx={{
+          display: 'flex',
+          alignItems: 'center',
           mb: 3,
           pb: 2,
           borderBottom: `1px solid ${theme.palette.divider}`
@@ -397,9 +386,9 @@ function CreateTask({ authToken, currentUser, setCurrentPage }) {
             {/* Selected Sprint Preview */}
             {formData.sprint && (
               <Grid item xs={12}>
-                <Box sx={{ 
-                  p: 2, 
-                  bgcolor: theme.palette.grey[50], 
+                <Box sx={{
+                  p: 2,
+                  bgcolor: theme.palette.grey[50],
                   borderRadius: 1,
                   border: `1px solid ${theme.palette.divider}`
                 }}>
@@ -430,9 +419,9 @@ function CreateTask({ authToken, currentUser, setCurrentPage }) {
 
             {/* Priority Preview */}
             <Grid item xs={12}>
-              <Box sx={{ 
-                p: 2, 
-                bgcolor: theme.palette.grey[50], 
+              <Box sx={{
+                p: 2,
+                bgcolor: theme.palette.grey[50],
                 borderRadius: 1,
                 border: `1px solid ${theme.palette.divider}`,
                 display: 'flex',

@@ -27,6 +27,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload"; // Import CloudUploadIcon
 import AttachFileIcon from "@mui/icons-material/AttachFile"; // Import AttachFileIcon for displaying file link
 import { toast } from "react-toastify";
+import axiosClient from "../api/axiosClient";
 
 // Styled components consistent with SprintsPage.jsx
 const Root = styled(Box)({
@@ -251,25 +252,12 @@ const DocumentsPage = ({ authToken, setCurrentPage, currentUser }) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("https://back-end-hk2p.onrender.com/api/documents", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setDocuments(data);
-      } else {
-        setError(data.message || "Lỗi khi tải danh sách tài liệu.");
-        toast.error(data.message || "Không thể tải tài liệu.");
-      }
+      const data = await axiosClient.get("/documents");
+      setDocuments(data);
     } catch (err) {
-      setError("Lỗi kết nối hoặc lỗi mạng.");
-      toast.error("Lỗi kết nối đến máy chủ.");
+      const message = err.response?.data?.message || "Lỗi khi tải danh sách tài liệu.";
+      setError(message);
+      toast.error("Không thể tải tài liệu.");
       console.error("Fetch documents error:", err);
     } finally {
       // Ensure loading state is set to false after fetching
@@ -318,27 +306,11 @@ const DocumentsPage = ({ authToken, setCurrentPage, currentUser }) => {
     if (!documentToDelete) return;
 
     try {
-      const response = await fetch(
-        `https://back-end-hk2p.onrender.com/api/documents/${documentToDelete._id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-        }
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success(data.message);
-        fetchDocuments(); // Refresh the list
-      } else {
-        toast.error(data.message || "Lỗi khi xóa tài liệu.");
-      }
+      const data = await axiosClient.delete(`/documents/${documentToDelete._id}`);
+      toast.success(data.message);
+      fetchDocuments(); // Refresh the list
     } catch (err) {
-      toast.error("Lỗi kết nối khi xóa tài liệu.");
+      toast.error(err.response?.data?.message || "Lỗi khi xóa tài liệu.");
       console.error("Delete document error:", err);
     } finally {
       handleCloseDeleteDialog();
@@ -403,48 +375,25 @@ const DocumentsPage = ({ authToken, setCurrentPage, currentUser }) => {
       }
 
       try {
-        const uploadResponse = await fetch(
-          "https://back-end-hk2p.onrender.com/api/documents/upload",
+        const uploadResponse = await axiosClient.post(
+          "/documents/upload",
+          formData,
           {
-            method: "POST",
             headers: {
-              Authorization: `Bearer ${authToken}`,
+              'Content-Type': 'multipart/form-data',
             },
-            body: formData,
           }
         );
 
         // --- ADD THESE CONSOLE LOGS ---
-        console.log("Upload Response Status:", uploadResponse.status);
-        console.log("Upload Response Headers:", uploadResponse.headers);
+        console.log("Upload Response Data:", uploadResponse);
 
-        // Check if the response is actually JSON before trying to parse
-        const contentType = uploadResponse.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          const uploadData = await uploadResponse.json();
-          console.log("Upload Response Data (JSON):", uploadData);
-
-          if (uploadResponse.ok) {
-            finalFileUrl = uploadData.fileUrl;
-            toast.success("File đã được tải lên thành công!");
-          } else {
-            toast.error(uploadData.message || "Lỗi khi tải file lên.");
-            console.error("Upload file error (JSON response):", uploadData);
-            return;
-          }
-        } else {
-          // If not JSON, read as text to see the HTML content
-          const errorText = await uploadResponse.text();
-          console.error("Upload file error (Non-JSON response):", errorText);
-          toast.error(
-            "Lỗi server: Phản hồi không hợp lệ. Vui lòng kiểm tra console."
-          );
-          return;
-        }
+        finalFileUrl = uploadResponse.fileUrl;
+        toast.success("File đã được tải lên thành công!");
 
       } catch (err) {
-        toast.error("Lỗi kết nối khi tải file lên.");
-        console.error("Upload file network error:", err);
+        toast.error(err.response?.data?.message || "Lỗi khi tải file lên.");
+        console.error("Upload file error:", err);
         return;
       }
     }
@@ -457,38 +406,23 @@ const DocumentsPage = ({ authToken, setCurrentPage, currentUser }) => {
     };
 
     const url = currentDocument._id
-      ? `https://back-end-hk2p.onrender.com/api/documents/${currentDocument._id}`
-      : "https://back-end-hk2p.onrender.com/api/documents";
-    const method = currentDocument._id ? "PUT" : "POST";
+      ? `/documents/${currentDocument._id}`
+      : "/documents";
 
     try {
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success(
-          `Tài liệu đã được ${
-            currentDocument._id ? "cập nhật" : "tạo"
-          } thành công!`
-        );
-        fetchDocuments(); // Refresh the list
-        handleCloseEditDialog();
+      let data;
+      if (currentDocument._id) {
+        data = await axiosClient.put(url, payload);
+        toast.success("Tài liệu đã được cập nhật thành công!");
       } else {
-        toast.error(
-          data.message ||
-            `Lỗi khi ${currentDocument._id ? "cập nhật" : "tạo"} tài liệu.`
-        );
+        data = await axiosClient.post(url, payload);
+        toast.success("Tài liệu đã được tạo thành công!");
       }
+
+      fetchDocuments(); // Refresh the list
+      handleCloseEditDialog();
     } catch (err) {
-      toast.error("Lỗi kết nối khi lưu tài liệu.");
+      toast.error(err.response?.data?.message || `Lỗi khi ${currentDocument._id ? "cập nhật" : "tạo"} tài liệu.`);
       console.error("Save document error:", err);
     }
   };

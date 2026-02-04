@@ -14,6 +14,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
+import axiosClient from "../../api/axiosClient";
 
 const CreateSprint = ({ authToken, setCurrentPage }) => {
   const [title, setTitle] = useState("");
@@ -53,35 +54,27 @@ const CreateSprint = ({ authToken, setCurrentPage }) => {
     }
 
     try {
-      const response = await fetch("https://back-end-hk2p.onrender.com/api/sprints/add", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
+      try {
+        const data = await axiosClient.post("/sprints/add", {
           title,
           describe,
           startDate: start.format("YYYY-MM-DD"),
           endDate: end.format("YYYY-MM-DD"),
-        }),
-      });
+        });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success(data.message || "Tạo sprint thành công!");
-        // Reset form fields
-        setTitle("");
-        setDescribe("");
-        setStartDate("");
-        setEndDate("");
-        setCurrentPage("/sprints"); // Navigate back to sprints list after success
-      } else {
-        toast.error(data.message || "Có lỗi xảy ra khi tạo sprint.");
-        console.error("Lỗi từ server:", data.error || data);
+        if (data) {
+          toast.success(data.message || "Tạo sprint thành công!");
+          // Reset form fields
+          setTitle("");
+          setDescribe("");
+          setStartDate("");
+          setEndDate("");
+          setCurrentPage("/sprints"); // Navigate back to sprints list after success
+        }
+      } catch (error) {
+        toast.error(error.response?.data?.message || "Có lỗi xảy ra khi tạo sprint.");
+        console.error("Lỗi từ server:", error);
       }
-    } catch (error) {
       console.error("Lỗi khi gửi yêu cầu tạo sprint:", error);
       toast.error("Không thể kết nối đến server hoặc có lỗi mạng.");
     } finally {

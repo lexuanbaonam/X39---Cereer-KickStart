@@ -28,8 +28,8 @@ import {
   // Removed EditIcon as per request
 } from "@mui/icons-material";
 import { toast } from "react-toastify";
+import axiosClient from "../api/axiosClient";
 
-const API_BASE_URL = "https://back-end-hk2p.onrender.com/api";
 const LOADING_DELAY_MS = 1000;
 
 // Styled Components (Adapted from SprintsPage.jsx)
@@ -254,15 +254,7 @@ function IncidentPage({ authToken, currentUserId, currentUserRoleTag }) {
 
     setLoadingIncidents(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/incidents`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Không thể tải danh sách sự cố");
-      }
-
-      const data = await response.json();
+      const data = await axiosClient.get("/incidents");
       if (Array.isArray(data)) {
         setIncidents(data);
       } else {
@@ -304,31 +296,20 @@ function IncidentPage({ authToken, currentUserId, currentUserRoleTag }) {
     }
 
     setLoadingIncidentCreation(true);
+    setLoadingIncidentCreation(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/incidents`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
-          title: incidentTitle,
-          description: incidentDescription,
-          type: incidentType,
-        }),
+      await axiosClient.post("/incidents", {
+        title: incidentTitle,
+        description: incidentDescription,
+        type: incidentType,
       });
 
-      const data = await response.json();
-      if (response.status === 201) {
-        toast.success("Báo cáo sự cố thành công!");
-        handleCloseForm();
-        fetchIncidents(); // Refresh the list
-      } else {
-        toast.error(`Lỗi khi báo cáo sự cố: ${data.message || "Lỗi không xác định"}`);
-      }
+      toast.success("Báo cáo sự cố thành công!");
+      handleCloseForm();
+      fetchIncidents(); // Refresh the list
     } catch (err) {
       console.error("Lỗi khi báo cáo sự cố:", err);
-      toast.error(`Lỗi khi báo cáo sự cố: ${err.message}`);
+      toast.error(`Lỗi khi báo cáo sự cố: ${err.response?.data?.message || err.message}`);
     } finally {
       setLoadingIncidentCreation(false);
     }

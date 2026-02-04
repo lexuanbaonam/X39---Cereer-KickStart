@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { toast } from "react-toastify"; // Ensure toast is configured in your app
+import axiosClient from '../../api/axiosClient';
 
 // Define Root styled component outside the component to avoid re-creation on render
 const Root = styled(Box)(({ theme }) => ({
@@ -320,27 +321,15 @@ function SettingPage({ setCurrentPage, currentUser, authToken, onProfileUpdate }
 
     try {
       // Placeholder for your actual API endpoint for updating user profile
-      const response = await fetch("https://back-end-hk2p.onrender.com/api/users/me", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify(changes),
-      });
+      const data = await axiosClient.put("/users/me", changes);
 
-      if (response.ok) {
-        toast.success("Hồ sơ đã được cập nhật thành công!");
-        setIsEditing(false);
-        // Re-fetch profile data to update currentUser in parent component
-        await onProfileUpdate(authToken);
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.message || "Cập nhật hồ sơ thất bại.");
-      }
+      toast.success("Hồ sơ đã được cập nhật thành công!");
+      setIsEditing(false);
+      // Re-fetch profile data to update currentUser in parent component
+      await onProfileUpdate(authToken);
     } catch (error) {
       console.error("Error saving profile:", error);
-      toast.error("Đã xảy ra lỗi mạng khi cập nhật hồ sơ. Vui lòng thử lại.");
+      toast.error(error.response?.data?.message || "Đã xảy ra lỗi mạng khi cập nhật hồ sơ. Vui lòng thử lại.");
     }
   };
 
@@ -392,13 +381,19 @@ function SettingPage({ setCurrentPage, currentUser, authToken, onProfileUpdate }
       // Placeholder for your actual avatar upload API endpoint
       // This is where you would send the formData to your backend
       // Example with a dummy progress update
-      const uploadApiUrl = "https://back-end-hk2p.onrender.com/api/upload-avatar"; // Replace with your actual endpoint
 
       // Simulate progress for demonstration
-      for (let i = 0; i <= 100; i += 10) {
-        await new Promise(resolve => setTimeout(resolve, 100)); // Simulate network delay
+      for (let i = 0; i <= 90; i += 30) {
+        await new Promise(resolve => setTimeout(resolve, 50)); // Simulate network delay
         setUploadProgress(i);
       }
+
+      await axiosClient.post("/upload-avatar", formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      setUploadProgress(100);
 
       // After simulated upload, assume success and get a new URL
       // In a real application, the server would return the new avatarUrl
@@ -408,7 +403,7 @@ function SettingPage({ setCurrentPage, currentUser, authToken, onProfileUpdate }
       toast.success("Ảnh đại diện đã được tải lên thành công!");
     } catch (error) {
       console.error("Error uploading avatar:", error);
-      toast.error("Đã xảy ra lỗi khi tải ảnh đại diện lên.");
+      toast.error(error.response?.data?.message || "Đã xảy ra lỗi khi tải ảnh đại diện lên.");
     } finally {
       setIsUploading(false);
       setUploadProgress(0); // Reset progress
@@ -454,7 +449,7 @@ function SettingPage({ setCurrentPage, currentUser, authToken, onProfileUpdate }
           </Box>
         </ProfileHeader>
 
-        <ActionButtons style={{"paddingBottom":"0px"}}>
+        <ActionButtons style={{ "paddingBottom": "0px" }}>
           {isEditing ? (
             <>
               <StyledButton variant="contained" onClick={handleSave} disabled={isUploading}>
@@ -471,7 +466,7 @@ function SettingPage({ setCurrentPage, currentUser, authToken, onProfileUpdate }
           )}
         </ActionButtons>
 
-        <FormContainer style={{"paddingTop":"0px"}}>
+        <FormContainer style={{ "paddingTop": "0px" }}>
           <SectionTitle variant="h5">Thông tin cá nhân</SectionTitle>
 
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>

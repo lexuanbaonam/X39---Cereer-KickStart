@@ -29,6 +29,7 @@ import DoneAllIcon from '@mui/icons-material/DoneAll';
 import AssignmentLateIcon from '@mui/icons-material/AssignmentLate';
 import PublishIcon from '@mui/icons-material/Publish';
 import PauseCircleFilledIcon from '@mui/icons-material/PauseCircleFilled';
+import axiosClient from '../../api/axiosClient';
 
 const AdminTimeline = ({ authToken }) => {
   // State quản lý tab, dữ liệu, trạng thái loading và lỗi
@@ -54,23 +55,19 @@ const AdminTimeline = ({ authToken }) => {
   const endDate = "25/02/2024";
   const ganttDates = ["15/01", "22/01", "29/01", "05/02", "12/02", "19/02", "25/02"];
 
-  // Hàm chung để gọi API
+  // Hàm chung để gọi API (Modified to use axiosClient)
   const callApi = async (url, method, body = null) => {
-    const headers = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${authToken}`
-    };
-    const config = {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : null,
-    };
-    const response = await fetch(url, config);
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `API call failed: ${response.statusText}`);
+    try {
+      const config = {
+        method: method,
+        url: url,
+        data: body,
+      };
+      const response = await axiosClient(config);
+      return response; // axiosClient returns response.data
+    } catch (error) {
+      throw new Error(error.response?.data?.message || error.message);
     }
-    return response.json();
   };
 
   // Hàm fetch danh sách task timeline
@@ -79,7 +76,7 @@ const AdminTimeline = ({ authToken }) => {
     setError(null);
     try {
       // Endpoint: GET /api/admin/timeline-tasks
-      const data = await callApi('https://back-end-hk2p.onrender.com/api/admin/timeline-tasks', 'GET');
+      const data = await callApi('/admin/timeline-tasks', 'GET');
       setTimelineTasks(data.data);
     } catch (err) {
       console.error("Error fetching timeline tasks:", err);
@@ -95,7 +92,7 @@ const AdminTimeline = ({ authToken }) => {
     setError(null);
     try {
       // Endpoint: GET /api/timeline/analyze
-      const data = await callApi('https://back-end-hk2p.onrender.com/api/timeline/analyze', 'GET');
+      const data = await callApi('/timeline/analyze', 'GET');
       setAnalysisData(data.data);
     } catch (err) {
       console.error("Error fetching analysis data:", err);
@@ -109,7 +106,7 @@ const AdminTimeline = ({ authToken }) => {
   const updateTimelineTask = async (taskId, updatedData) => {
     try {
       // Endpoint: PUT /api/admin/timeline-tasks/update/:id
-      await callApi(`https://back-end-hk2p.onrender.com/api/admin/timeline-tasks/update/${taskId}`, 'PUT', updatedData);
+      await callApi(`/admin/timeline-tasks/update/${taskId}`, 'PUT', updatedData);
       alert('Cập nhật task thành công!');
       fetchTimelineTasks(); // Refresh danh sách sau khi cập nhật
     } catch (err) {
@@ -122,7 +119,7 @@ const AdminTimeline = ({ authToken }) => {
     try {
       if (window.confirm('Bạn có chắc chắn muốn xóa task này?')) {
         // Endpoint: DELETE /api/admin/timeline-tasks/delete/:id
-        await callApi(`https://back-end-hk2p.onrender.com/api/admin/timeline-tasks/delete/${taskId}`, 'DELETE');
+        await callApi(`/admin/timeline-tasks/delete/${taskId}`, 'DELETE');
         alert('Xóa task thành công!');
         fetchTimelineTasks(); // Refresh danh sách sau khi xóa
       }
@@ -138,7 +135,7 @@ const AdminTimeline = ({ authToken }) => {
       setLoading(false);
       return;
     }
-    
+
     if (tab === 0) {
       fetchTimelineTasks();
     } else if (tab === 1) {

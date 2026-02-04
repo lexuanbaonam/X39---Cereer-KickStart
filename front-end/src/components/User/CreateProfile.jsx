@@ -20,6 +20,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import 'dayjs/locale/vi';
+import axiosClient from '../../api/axiosClient';
 
 const FormContainer = styled(Box)(() => ({
   marginTop: '64px',
@@ -64,15 +65,11 @@ const CreateProfile = ({ setCurrentPage, authToken, onProfileCreated }) => {
       fetchingJobPositionsRef.current = true;
       setFetchingJobPositions(true);
       try {
-        const res = await fetch('https://back-end-hk2p.onrender.com/api/job-positions/all', {
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
-        });
-        const data = await res.json();
-        if (res.ok) setAvailableJobPositions(data.jobPositions);
-        else toast.error(data.message || 'Lỗi khi tải danh sách chức vụ.');
+        const data = await axiosClient.get('/job-positions/all');
+        setAvailableJobPositions(data.jobPositions);
       } catch (error) {
         console.error('Fetch job positions error:', error);
-        toast.error('Lỗi mạng khi tải danh sách chức vụ.');
+        toast.error('Lỗi khi tải danh sách chức vụ.');
       } finally {
         setFetchingJobPositions(false);
         fetchingJobPositionsRef.current = false;
@@ -111,22 +108,12 @@ const CreateProfile = ({ setCurrentPage, authToken, onProfileCreated }) => {
       console.log('Creating profile payload:', payload);
 
       try {
-        const res = await fetch('https://back-end-hk2p.onrender.com/api/users/create-profile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
-          body: JSON.stringify(payload),
-        });
-        const data = await res.json();
-        if (res.ok) {
-          toast.success(data.message || 'Hồ sơ đã được tạo thành công!');
-          onProfileCreated();
-        } else {
-          console.error('Create profile error response:', data);
-          toast.error(data.message || 'Tạo hồ sơ thất bại với lỗi phía server.');
-        }
+        const data = await axiosClient.post('/users/create-profile', payload);
+        toast.success(data.message || 'Hồ sơ đã được tạo thành công!');
+        onProfileCreated();
       } catch (error) {
         console.error('Lỗi khi tạo hồ sơ:', error);
-        toast.error('Lỗi mạng hoặc không mong muốn khi tạo hồ sơ.');
+        toast.error(error.response?.data?.message || 'Tạo hồ sơ thất bại với lỗi phía server.');
       } finally {
         setSubmitting(false);
       }

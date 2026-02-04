@@ -24,6 +24,7 @@ import EmailIcon from "@mui/icons-material/Email";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline"; // Added for delete icon
 import { toast } from "react-toastify";
+import axiosClient from '../../api/axiosClient';
 import "./AdminDecentralization.css"; // Assuming this CSS file exists
 
 const AdminDecentralization = ({ authToken, currentUser, currentAccount }) => {
@@ -67,24 +68,13 @@ const AdminDecentralization = ({ authToken, currentUser, currentAccount }) => {
       return;
     }
     setLoading(true);
+    setLoading(true);
     try {
-      const response = await fetch("https://back-end-hk2p.onrender.com/api/users/all", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setUsers(data.users || []);
-      } else {
-        toast.error(data.message || "Lỗi khi tải danh sách người dùng.");
-        setUsers([]);
-      }
+      const data = await axiosClient.get("/users/all");
+      setUsers(data.users || []);
     } catch (error) {
       console.error("Error fetching users:", error);
-      toast.error("Lỗi mạng hoặc server khi tải danh sách người dùng.");
+      toast.error(error.response?.data?.message || "Lỗi mạng hoặc server khi tải danh sách người dùng.");
       setUsers([]);
     } finally {
       setLoading(false);
@@ -95,24 +85,14 @@ const AdminDecentralization = ({ authToken, currentUser, currentAccount }) => {
   const fetchAllDeparts = useCallback(async () => {
     if (fetchingDepartsRef.current) return; // Prevent duplicate fetches
     fetchingDepartsRef.current = true;
+    fetchingDepartsRef.current = true;
     try {
-      const response = await fetch("https://back-end-hk2p.onrender.com/api/departs/all", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-      const data = await response.json();
-      if (response.ok) {
-        // Corrected: Access data from 'data' key as per your API response
-        setAvailableDeparts(data.data || []);
-      } else {
-        toast.error(data.message || "Lỗi khi tải danh sách phòng ban.");
-      }
+      const data = await axiosClient.get("/departs/all");
+      // Corrected: Access data from 'data' key as per your API response
+      setAvailableDeparts(data.data || []);
     } catch (error) {
       console.error("Error fetching departments:", error);
-      toast.error("Lỗi mạng hoặc server khi tải danh sách phòng ban.");
+      toast.error(error.response?.data?.message || "Lỗi mạng hoặc server khi tải danh sách phòng ban.");
     } finally {
       fetchingDepartsRef.current = false;
     }
@@ -122,24 +102,14 @@ const AdminDecentralization = ({ authToken, currentUser, currentAccount }) => {
   const fetchAllJobPositions = useCallback(async () => {
     if (fetchingJobPositionsRef.current) return; // Prevent duplicate fetches
     fetchingJobPositionsRef.current = true;
+    fetchingJobPositionsRef.current = true;
     try {
-      const response = await fetch("https://back-end-hk2p.onrender.com/api/job-positions/all", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-      const data = await response.json();
-      if (response.ok) {
-        // Assuming job positions have _id and title properties
-        setAvailableJobPositions(data.jobPositions || []);
-      } else {
-        toast.error(data.message || "Lỗi khi tải danh sách chức vụ.");
-      }
+      const data = await axiosClient.get("/job-positions/all");
+      // Assuming job positions have _id and title properties
+      setAvailableJobPositions(data.jobPositions || []);
     } catch (error) {
       console.error("Error fetching job positions:", error);
-      toast.error("Lỗi mạng hoặc server khi tải danh sách chức vụ.");
+      toast.error(error.response?.data?.message || "Lỗi mạng hoặc server khi tải danh sách chức vụ.");
     } finally {
       fetchingJobPositionsRef.current = false;
     }
@@ -190,48 +160,35 @@ const AdminDecentralization = ({ authToken, currentUser, currentAccount }) => {
     await fetchAllJobPositions();
 
     try {
-      const response = await fetch(`https://back-end-hk2p.onrender.com/api/users/${userId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
+      const data = await axiosClient.get(`/users/${userId}`);
+      const user = data.user;
+      setEditingUser(user);
+      // Format dob for input type="date"
+      const formattedDob = user.dob ? new Date(user.dob).toISOString().split('T')[0] : '';
+
+      // Map jobPosition and departs to an array of their _id values
+      const userJobPositions = user.jobPosition ? user.jobPosition.map(jp => jp._id) : [];
+      const userDeparts = user.departs ? user.departs.map(d => d._id) : [];
+
+      setEditFormData({
+        name: user.name || "",
+        personalEmail: user.personalEmail || "",
+        companyEmail: user.companyEmail || "",
+        phoneNumber: user.phoneNumber || "",
+        dob: formattedDob,
+        roleTag: user.roleTag || "",
+        departs: userDeparts,
+        jobPosition: userJobPositions,
+        active: user.accountId?.active || false, // Get active status from account
       });
-      const data = await response.json();
-      if (response.ok) {
-        const user = data.user;
-        setEditingUser(user);
-        // Format dob for input type="date"
-        const formattedDob = user.dob ? new Date(user.dob).toISOString().split('T')[0] : '';
 
-        // Map jobPosition and departs to an array of their _id values
-        const userJobPositions = user.jobPosition ? user.jobPosition.map(jp => jp._id) : [];
-        const userDeparts = user.departs ? user.departs.map(d => d._id) : [];
-
-        setEditFormData({
-          name: user.name || "",
-          personalEmail: user.personalEmail || "",
-          companyEmail: user.companyEmail || "",
-          phoneNumber: user.phoneNumber || "",
-          dob: formattedDob,
-          roleTag: user.roleTag || "",
-          departs: userDeparts,
-          jobPosition: userJobPositions,
-          active: user.accountId?.active || false, // Get active status from account
-        });
-
-        // Delay enabling the form for 2 seconds for a smoother UX after data loads
-        setTimeout(() => {
-          setIsFormDisabled(false);
-        }, 2000);
-
-      } else {
-        toast.error(data.message || "Lỗi khi tải thông tin người dùng để chỉnh sửa.");
-        handleCloseEditModal(); // Close modal on error
-      }
+      // Delay enabling the form for 2 seconds for a smoother UX after data loads
+      setTimeout(() => {
+        setIsFormDisabled(false);
+      }, 2000);
     } catch (error) {
       console.error("Error fetching user for edit:", error);
-      toast.error("Lỗi mạng hoặc server khi tải thông tin người dùng.");
+      toast.error(error.response?.data?.message || "Lỗi mạng hoặc server khi tải thông tin người dùng.");
       handleCloseEditModal(); // Close modal on error
     } finally {
       setFetchingUserForEdit(false);
@@ -284,31 +241,18 @@ const AdminDecentralization = ({ authToken, currentUser, currentAccount }) => {
 
     setLoading(true); // Set main loading for the update operation
     try {
-      const response = await fetch(`https://back-end-hk2p.onrender.com/api/users/${editingUser._id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
-          ...editFormData,
-          // Ensure DOB is sent as a valid ISO string if it exists
-          dob: editFormData.dob ? new Date(editFormData.dob).toISOString() : undefined,
-        }),
+      const data = await axiosClient.put(`/users/${editingUser._id}`, {
+        ...editFormData,
+        // Ensure DOB is sent as a valid ISO string if it exists
+        dob: editFormData.dob ? new Date(editFormData.dob).toISOString() : undefined,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success(data.message || "Cập nhật thông tin người dùng thành công!");
-        fetchAllUsers(); // Re-fetch all users to update the list with latest changes
-        handleCloseEditModal(); // Close the modal
-      } else {
-        toast.error(data.message || "Lỗi khi cập nhật thông tin người dùng.");
-      }
+      toast.success(data.message || "Cập nhật thông tin người dùng thành công!");
+      fetchAllUsers(); // Re-fetch all users to update the list with latest changes
+      handleCloseEditModal(); // Close the modal
     } catch (error) {
       console.error("Error updating user:", error);
-      toast.error("Lỗi mạng hoặc server khi cập nhật người dùng.");
+      toast.error(error.response?.data?.message || "Lỗi mạng hoặc server khi cập nhật người dùng.");
     } finally {
       setLoading(false);
     }
@@ -335,26 +279,14 @@ const AdminDecentralization = ({ authToken, currentUser, currentAccount }) => {
 
     setLoading(true);
     try {
-      const response = await fetch(`https://back-end-hk2p.onrender.com/api/admin/access-control/delete/${userToDelete._id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
+      const data = await axiosClient.delete(`/admin/access-control/delete/${userToDelete._id}`);
 
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success(data.message || "Xóa người dùng thành công!");
-        fetchAllUsers(); // Re-fetch all users to update the list
-        handleCloseDeleteConfirm(); // Close the confirmation dialog
-      } else {
-        toast.error(data.message || "Lỗi khi xóa người dùng.");
-      }
+      toast.success(data.message || "Xóa người dùng thành công!");
+      fetchAllUsers(); // Re-fetch all users to update the list
+      handleCloseDeleteConfirm(); // Close the confirmation dialog
     } catch (error) {
       console.error("Error deleting user:", error);
-      toast.error("Lỗi mạng hoặc server khi xóa người dùng.");
+      toast.error(error.response?.data?.message || "Lỗi mạng hoặc server khi xóa người dùng.");
     } finally {
       setLoading(false);
     }

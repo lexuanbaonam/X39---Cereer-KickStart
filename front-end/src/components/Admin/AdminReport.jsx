@@ -4,6 +4,7 @@ import {
   Typography, Box, Paper, Table, TableHead, TableBody, TableRow, TableCell, List, ListItemButton, ListItemText, Divider, CircularProgress,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import axiosClient from '../../api/axiosClient'; // Import axiosClient
 import { styled } from '@mui/system';
 
 const ReportContainer = styled(Box)({
@@ -14,6 +15,7 @@ const ReportContainer = styled(Box)({
   minHeight: '100vh',
 });
 
+// ... (Sidebar, ReportContent, StyledAccordionSummary, StyledListItemButton styles remain same)
 const Sidebar = styled(Box)({
   flex: '0 0 280px',
   boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
@@ -41,7 +43,7 @@ const StyledAccordionSummary = styled(AccordionSummary)(({ theme }) => ({
 const StyledListItemButton = styled(ListItemButton)(({ theme }) => ({
   '&.Mui-selected': {
     backgroundColor: '#e0e0e0',
-    
+
     '&:hover': {
       backgroundColor: '#e0e0e0',
     },
@@ -57,10 +59,9 @@ export default function AdminReport({ authToken }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const baseURL = 'https://back-end-hk2p.onrender.com/api/reports';
   const endpoints = {
-    overview: `${baseURL}/overview`,
-    performance: `${baseURL}/performance`,
+    overview: '/reports/overview',
+    performance: '/reports/performance',
   };
 
   const handleSelect = (key) => () => setSelected(key);
@@ -71,21 +72,10 @@ export default function AdminReport({ authToken }) {
       setError(null);
       setData(null);
       try {
-        const res = await fetch(endpoints[selected], {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${authToken}`,
-          },
-        });
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.message || `Error ${res.status}`);
-        }
-        const json = await res.json();
+        const json = await axiosClient.get(endpoints[selected]);
         setData(json);
       } catch (err) {
-        setError(err.message);
+        setError(err.response?.data?.message || err.message);
       } finally {
         setLoading(false);
       }
