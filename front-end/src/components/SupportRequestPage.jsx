@@ -20,7 +20,9 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+
 import { toast } from 'react-toastify';
+import axiosClient from '../api/axiosClient';
 
 // Styled components
 const Root = styled(Box)({
@@ -144,33 +146,13 @@ const SupportRequestPage = ({ authToken }) => {
 
     setLoading(true);
     try {
-      const res = await fetch('https://back-end-hk2p.onrender.com/api/supports/my-requests', {
-        headers: { 'Authorization': `Bearer ${authToken}` },
-      });
-
-      if (!res.ok) {
-        if (res.status === 401) {
-          throw new Error('Bạn không được phép truy cập. Vui lòng kiểm tra lại token.');
-        }
-        if (res.status === 403) {
-          throw new Error('Bạn không có quyền truy cập chức năng này. Vui lòng kiểm tra lại quyền của bạn.');
-        }
-        throw new Error('Không thể tải dữ liệu yêu cầu.');
-      }
-      const data = await res.json();
+      const data = await axiosClient.get('/supports/my-requests');
 
       const enriched = await Promise.all(
         data.map(async (req) => {
           try {
-            const userRes = await fetch(
-              `https://back-end-hk2p.onrender.com/api/users/${req.user}`,
-              { headers: { 'Authorization': `Bearer ${authToken}` } }
-            );
-            if (!userRes.ok) {
-              console.warn(`Không lấy được thông tin người dùng cho ID: ${req.user}. Status: ${userRes.status}`);
-              return { ...req, userInfo: { name: 'Unknown', email: '', role: '', position: '' } };
-            }
-            const { user: userData } = await userRes.json();
+            const userData = await axiosClient.get(`/users/${req.user}`).then(res => res.user);
+
             return {
               ...req,
               userInfo: {
@@ -189,7 +171,14 @@ const SupportRequestPage = ({ authToken }) => {
 
       setRequests(enriched);
     } catch (error) {
-      toast.error(`Lỗi: ${error.message}`);
+      const status = error.response?.status;
+      if (status === 401) {
+        toast.error('Bạn không được phép truy cập. Vui lòng kiểm tra lại token.');
+      } else if (status === 403) {
+        toast.error('Bạn không có quyền truy cập chức năng này.');
+      } else {
+        toast.error(`Lỗi: ${error.response?.data?.message || error.message}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -205,18 +194,7 @@ const SupportRequestPage = ({ authToken }) => {
     }
     try {
       // BƯỚC 1: Gửi yêu cầu hỗ trợ
-      const requestResponse = await fetch('https://back-end-hk2p.onrender.com/api/supports/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-        },
-        body: JSON.stringify(newRequest),
-      });
-
-      if (!requestResponse.ok) {
-        throw new Error('Gửi yêu cầu thất bại.');
-      }
+      await axiosClient.post('/supports/create', newRequest);
 
       // BƯỚC 2: Tự động tạo phản hồi sau khi yêu cầu được tạo thành công
       // Dựa trên model, chúng ta cần title và description cho response.
@@ -226,43 +204,32 @@ const SupportRequestPage = ({ authToken }) => {
         responseMessage: 'Yêu cầu của bạn đã được tiếp nhận và đang chờ xử lý.', // Tin nhắn phản hồi mặc định
       };
 
-      const supportResponse = await fetch('https://back-end-hk2p.onrender.com/api/supports-response/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-        },
-        body: JSON.stringify(responsePayload),
-      });
-
-      if (!supportResponse.ok) {
+      try {
+        await axiosClient.post('/supports-response/', responsePayload);
+      } catch (err) {
         // Log lỗi nhưng không chặn luồng, vì yêu cầu chính đã thành công.
-        console.error('Lỗi khi tự động tạo phản hồi:', await supportResponse.text());
+        console.error('Lỗi khi tự động tạo phản hồi:', err);
       }
-      
+
       toast.success('Gửi yêu cầu hỗ trợ thành công! Một phản hồi mặc định đã được tạo.');
       setOpenCreateDialog(false);
       setNewRequest({ title: '', description: '' });
       fetchRequests(); // Tải lại danh sách để thấy yêu cầu mới
     } catch (error) {
-      toast.error(`Lỗi: ${error.message}`);
+      toast.error(`Lỗi: ${error.response?.data?.message || error.message}`);
     }
   };
 
   const handleDeleteRequest = async () => {
     if (!authToken || !requestToDelete) return toast.error('Không có token xác thực hoặc yêu cầu để xóa.');
     try {
-      const response = await fetch(
-        `https://back-end-hk2p.onrender.com/api/supports/delete/${requestToDelete._id}`,
-        { method: 'DELETE', headers: { 'Authorization': `Bearer ${authToken}` } }
-      );
-      if (!response.ok) throw new Error('Xóa yêu cầu thất bại.');
+      await axiosClient.delete(`/supports/delete/${requestToDelete._id}`);
       toast.success('Xóa yêu cầu hỗ trợ thành công!');
       setOpenDeleteDialog(false);
       setRequestToDelete(null);
       fetchRequests();
     } catch (error) {
-      toast.error(`Lỗi: ${error.message}`);
+      toast.error(`Lỗi: ${error.response?.data?.message || error.message}`);
     }
   };
 

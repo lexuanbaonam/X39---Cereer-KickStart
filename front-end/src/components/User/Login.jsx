@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button, TextField, Box, Typography, Container, Link } from '@mui/material';
 import './Login.css';
 import { toast } from 'react-toastify'; // Import toast
+import axiosClient from '../../api/axiosClient';
 
 const Login = ({ setCurrentPage, onLoginSuccess }) => {
   const [email, setEmail] = useState('');
@@ -12,32 +13,20 @@ const Login = ({ setCurrentPage, onLoginSuccess }) => {
     event.preventDefault();
 
     try {
-      const response = await fetch('https://back-end-hk2p.onrender.com/api/accounts/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+      const data = await axiosClient.post('/accounts/login', {
+        email,
+        password,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        console.log('Login successful:', data);
-        console.log('Token received for login success:', data.token);
-        toast.success("Đăng nhập thành công!"); // Toast for successful login
-        setCurrentPage('/homepage'); // Redirect to homepage immediately after login
-        onLoginSuccess(data.token); // Pass token to App.jsx for further processing (e.g., fetching profile)
-      } else {
-        console.error('Login failed:', data);
-        toast.error(data.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại email và mật khẩu.');
-      }
+      console.log('Login successful:', data);
+      console.log('Token received for login success:', data.token);
+      toast.success("Đăng nhập thành công!"); // Toast for successful login
+      setCurrentPage('/homepage'); // Redirect to homepage immediately after login
+      onLoginSuccess(data.token); // Pass token to App.jsx for further processing (e.g., fetching profile)
     } catch (err) {
-      console.error('Network error or unexpected issue:', err);
-      toast.error('Đã xảy ra lỗi. Vui lòng thử lại sau.');
+      console.error('Login failed:', err);
+      const message = err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại email và mật khẩu.';
+      toast.error(message);
     }
   };
 
@@ -61,7 +50,7 @@ const Login = ({ setCurrentPage, onLoginSuccess }) => {
         <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 2, width: '100%' }}>
           <TextField margin="normal" required fullWidth id="email" label="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
           <TextField margin="normal" required fullWidth id="password" label="Mật khẩu" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-          <Button type="submit" fullWidth variant="contained" sx={{ mt: 2, mb: 1, bgcolor: '#4a90e2', '&:hover': { bgcolor: '#357abd' },}}>
+          <Button type="submit" fullWidth variant="contained" sx={{ mt: 2, mb: 1, bgcolor: '#4a90e2', '&:hover': { bgcolor: '#357abd' }, }}>
             Đăng Nhập
           </Button>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', mt: 1 }}>

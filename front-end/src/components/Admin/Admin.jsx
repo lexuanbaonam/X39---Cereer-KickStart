@@ -19,6 +19,7 @@ import BusinessIcon from "@mui/icons-material/Business"; // Reverted to Material
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { toast } from "react-toastify"; // Import toastify
+import axiosClient from '../../api/axiosClient'; // Import axiosClient
 
 import "./Admin.css";
 
@@ -148,18 +149,7 @@ const Admin = ({ authToken }) => {
     if (!authToken) return;
     setLoading(true);
     try {
-      const res = await fetch("https://back-end-hk2p.onrender.com/api/users/all", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.message || `Server returned ${res.status}`);
-      }
-      const data = await res.json();
+      const data = await axiosClient.get("/users/all");
       setEmployees(data.users || []);
     } catch (err) {
       console.error(err);
@@ -193,54 +183,32 @@ const Admin = ({ authToken }) => {
 
   const grantUserAccess = async () => {
     try {
-      const res = await fetch(
-        "https://back-end-hk2p.onrender.com/api/admin/access-control/grant",
+      const data = await axiosClient.post(
+        "/admin/access-control/grant",
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify({
-            userId: selectedUserId,
-            roles: rolesInput.split(',').map(role => role.trim()),
-          }),
+          userId: selectedUserId,
+          roles: rolesInput.split(',').map(role => role.trim()),
         }
       );
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || "Cấp quyền thất bại");
-      }
-      toast.success("Cấp quyền thành công");
+      toast.success(data.message || "Cấp quyền thành công");
     } catch (err) {
-      toast.error(err.message);
+      toast.error(err.response?.data?.message || err.message);
     }
   };
 
   const updateUserAccess = async () => {
     try {
-      const res = await fetch(
-        "https://back-end-hk2p.onrender.com/api/admin/access-control/update",
+      const data = await axiosClient.put(
+        "/admin/access-control/update",
         {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify({
-            userId: selectedUserId,
-            roles: rolesInput.split(',').map(role => role.trim()),
-          }),
+          userId: selectedUserId,
+          roles: rolesInput.split(',').map(role => role.trim()),
         }
       );
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || "Cập nhật quyền thất bại");
-      }
-      toast.success("Cập nhật quyền thành công");
+      toast.success(data.message || "Cập nhật quyền thành công");
     } catch (err) {
-      toast.error(err.message);
+      toast.error(err.response?.data?.message || err.message);
     }
   };
 
@@ -249,54 +217,33 @@ const Admin = ({ authToken }) => {
       autoClose: 2000,
     });
     try {
-      const res = await fetch(
-        `https://back-end-hk2p.onrender.com/api/admin/access-control/delete/${selectedUserId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        }
+      const data = await axiosClient.delete(
+        `/admin/access-control/delete/${selectedUserId}`
       );
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || "Xóa quyền thất bại");
-      }
-      toast.success("Xóa quyền thành công");
+      toast.success(data.message || "Xóa quyền thành công");
     } catch (err) {
-      toast.error(err.message);
+      toast.error(err.response?.data?.message || err.message);
     }
   };
 
 
   const addDepartment = async () => {
     try {
-      const res = await fetch("https://back-end-hk2p.onrender.com/api/departs/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
-          title: departmentName,
-          code: departmentCode,
-          describe: departmentDesc,
-        }),
+      const data = await axiosClient.post("/departs/create", {
+        title: departmentName,
+        code: departmentCode,
+        describe: departmentDesc,
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || "Tạo phòng ban thất bại");
-      }
-      toast.success("Tạo phòng ban thành công!"); // Success toast
+      toast.success(data.message || "Tạo phòng ban thành công!"); // Success toast
       // Clear form fields
       setDepartmentName("");
       setDepartmentCode("");
       setDepartmentDesc("");
       setActiveForm(null);
     } catch (err) {
-      toast.error(err.message);
+      toast.error(err.response?.data?.message || err.message);
     }
   };
 
@@ -310,68 +257,43 @@ const Admin = ({ authToken }) => {
     }
 
     try {
-      const registerResponse = await fetch('https://back-end-hk2p.onrender.com/api/accounts/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${authToken}`, // Use admin's token for authorization
-        },
-        body: JSON.stringify({
-          email: newEmployeeEmail,
-          password: newEmployeePassword,
-          confirmPassword: newEmployeeConfirmPassword,
-          name: newEmployeeName,
-          age: parseInt(newEmployeeAge), // Ensure age is an integer, even if not displayed
-          phone: newEmployeePhone,
-        }),
+      const registerData = await axiosClient.post('/accounts/register', {
+        email: newEmployeeEmail,
+        password: newEmployeePassword,
+        confirmPassword: newEmployeeConfirmPassword,
+        name: newEmployeeName,
+        age: parseInt(newEmployeeAge), // Ensure age is an integer, even if not displayed
+        phone: newEmployeePhone,
       });
 
-      const registerData = await registerResponse.json();
+      toast.success(registerData.message || 'Thêm nhân viên thành công!');
+      // Step 2: If registration is successful, send verification email
+      if (registerData.account && registerData.account.email) {
+        try {
+          const verifyEmailData = await axiosClient.post('/accounts/send-verification', {
+            email: registerData.account.email
+          });
 
-      if (registerResponse.ok) {
-        toast.success(registerData.message || 'Thêm nhân viên thành công!');
-        // Step 2: If registration is successful, send verification email
-        if (registerData.account && registerData.account.email) {
-          try {
-            const verifyEmailResponse = await fetch('https://back-end-hk2p.onrender.com/api/accounts/send-verification', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${authToken}`, // Admin's token for this request too
-              },
-              body: JSON.stringify({ email: registerData.account.email }),
-            });
-
-            const verifyEmailData = await verifyEmailResponse.json();
-
-            if (verifyEmailResponse.ok) {
-              console.log('Verification email sent successfully:', verifyEmailData);
-              toast.success('Thêm nhân viên thành công! Vui lòng kiểm tra email của nhân viên để xác thực tài khoản.');
-            } else {
-              console.error('Failed to send verification email:', verifyEmailData);
-              toast.error(verifyEmailData.message || 'Thêm nhân viên thành công nhưng không gửi được email xác thực. Vui lòng thử lại sau.');
-            }
-          } catch (verifyEmailError) {
-            console.error('Network error or unexpected issue when sending verification email:', verifyEmailError);
-            toast.error('Thêm nhân viên thành công nhưng gặp lỗi khi gửi email xác thực. Vui lòng thử lại sau.');
-          }
+          console.log('Verification email sent successfully:', verifyEmailData);
+          toast.success('Thêm nhân viên thành công! Vui lòng kiểm tra email của nhân viên để xác thực tài khoản.');
+        } catch (verifyEmailError) {
+          console.error('Failed to send verification email:', verifyEmailError);
+          toast.error(verifyEmailError.response?.data?.message || 'Thêm nhân viên thành công nhưng không gửi được email xác thực. Vui lòng thử lại sau.');
         }
-
-        // Clear form fields
-        setNewEmployeeEmail('');
-        setNewEmployeePassword('');
-        setNewEmployeeConfirmPassword('');
-        setNewEmployeeName('');
-        setNewEmployeeAge(''); // Clear age state too
-        setNewEmployeePhone('');
-        setActiveForm(null); // Go back to employee list
-        fetchEmployees(); // Re-fetch all employees to update the list
-      } else {
-        toast.error(registerData.message || 'Thêm nhân viên thất bại. Vui lòng thử lại.');
       }
+
+      // Clear form fields
+      setNewEmployeeEmail('');
+      setNewEmployeePassword('');
+      setNewEmployeeConfirmPassword('');
+      setNewEmployeeName('');
+      setNewEmployeeAge(''); // Clear age state too
+      setNewEmployeePhone('');
+      setActiveForm(null); // Go back to employee list
+      fetchEmployees(); // Re-fetch all employees to update the list
     } catch (err) {
       console.error('Lỗi mạng hoặc vấn đề không mong muốn khi thêm nhân viên:', err);
-      toast.error('Đã xảy ra lỗi. Vui lòng thử lại sau.');
+      toast.error(err.response?.data?.message || 'Đã xảy ra lỗi. Vui lòng thử lại sau.');
     }
   };
 
@@ -435,21 +357,21 @@ const Admin = ({ authToken }) => {
                   onClick={() => {
                     setSelectedUserId(emp._id);
                     toast.warn(
-                        `Bạn có chắc muốn xóa quyền của ${emp.name}? Click nút này để xác nhận.`,
-                        {
-                            position: "top-center",
-                            autoClose: 5000,
-                            hideProgressBar: false,
-                            closeOnClick: false, // Prevent toast from closing on click
-                            pauseOnHover: true,
-                            draggable: true,
-                            progress: undefined,
-                            theme: "colored",
-                            onClick: () => { // This acts as a confirmation click on the toast itself
-                                deleteUserAccess();
-                                toast.dismiss(); // Dismiss the warning toast immediately after "confirmation"
-                            }
+                      `Bạn có chắc muốn xóa quyền của ${emp.name}? Click nút này để xác nhận.`,
+                      {
+                        position: "top-center",
+                        autoClose: 5000,
+                        hideProgressBar: false,
+                        closeOnClick: false, // Prevent toast from closing on click
+                        pauseOnHover: true,
+                        draggable: true,
+                        progress: undefined,
+                        theme: "colored",
+                        onClick: () => { // This acts as a confirmation click on the toast itself
+                          deleteUserAccess();
+                          toast.dismiss(); // Dismiss the warning toast immediately after "confirmation"
                         }
+                      }
                     );
                   }}
                 >

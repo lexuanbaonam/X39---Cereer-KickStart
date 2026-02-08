@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button, TextField, Box, Typography, Container, Link } from '@mui/material';
 import { toast } from 'react-toastify';
+import axiosClient from '../../api/axiosClient';
 import './ResetPassword.css';
 
 const ResetPassword = ({ setCurrentPage }) => {
@@ -40,28 +41,16 @@ const ResetPassword = ({ setCurrentPage }) => {
     }
 
     try {
-      const response = await fetch(`https://back-end-hk2p.onrender.com/api/accounts/reset-password/${token}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          password: newPassword,
-          confirmPassword: confirmNewPassword
-        }),
+      const data = await axiosClient.post(`/accounts/reset-password/${token}`, {
+        password: newPassword,
+        confirmPassword: confirmNewPassword
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success(data.message || 'Mật khẩu của bạn đã được đặt lại thành công!');
-        setCurrentPage('/login'); // Redirect to login after successful reset
-      } else {
-        toast.error(data.message || 'Đặt lại mật khẩu thất bại. Liên kết có thể không hợp lệ hoặc đã hết hạn.');
-      }
+      toast.success(data.message || 'Mật khẩu của bạn đã được đặt lại thành công!');
+      setCurrentPage('/login'); // Redirect to login after successful reset
     } catch (err) {
       console.error('Network error or unexpected issue:', err);
-      toast.error('Đã xảy ra lỗi. Vui lòng thử lại sau.');
+      toast.error(err.response?.data?.message || 'Đã xảy ra lỗi. Vui lòng thử lại sau.');
     }
   };
 
@@ -106,14 +95,14 @@ const ResetPassword = ({ setCurrentPage }) => {
               {error}
             </Typography>
           )}
-          <Button type="submit" fullWidth variant="contained" sx={{ mt: 2, mb: 1, bgcolor: '#4a90e2', '&:hover': { bgcolor: '#357abd' },}}>
+          <Button type="submit" fullWidth variant="contained" sx={{ mt: 2, mb: 1, bgcolor: '#4a90e2', '&:hover': { bgcolor: '#357abd' }, }}>
             Đặt Lại Mật Khẩu
           </Button>
           <Link href="/login" onClick={(e) => {
             e.preventDefault();
             setCurrentPage('/login');
           }}
-          sx={{ color: '#4a90e2', textDecoration: 'none', }}>
+            sx={{ color: '#4a90e2', textDecoration: 'none', }}>
             {"Quay lại Đăng nhập"}
           </Link>
         </Box>

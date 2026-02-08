@@ -32,6 +32,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { CircularProgress } from "@mui/material";
 import InstructPage from "./components/InstructPage";
+import axiosClient from "./api/axiosClient";
 
 function App() {
   const [currentPage, setCurrentPage] = useState(window.location.pathname);
@@ -70,58 +71,50 @@ function App() {
 
     fetchingUserRef.current = true;
     try {
-      const response = await fetch("https://back-end-hk2p.onrender.com/api/users/me", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (response.ok) {
-        if (data.user && data.user._id) {
-          setCurrentUser(data.user);
-          console.log("Fetched user profile:", data.user);
-          return { needsProfileCreation: false, error: false, user: data.user };
-        } else {
-          setCurrentUser(null);
-          console.warn("User profile data missing from API response:", data);
-          return {
-            needsProfileCreation: true,
-            error: false,
-            user: null,
-            message: data.message || "Không tìm thấy hồ sơ người dùng.",
-          };
-        }
+      // Use axiosClient instead of fetch
+      // Note: axiosClient response interceptor returns response.data directly
+      const data = await axiosClient.get("/users/me");
+
+      if (data.user && data.user._id) {
+        setCurrentUser(data.user);
+        console.log("Fetched user profile:", data.user);
+        return { needsProfileCreation: false, error: false, user: data.user };
       } else {
         setCurrentUser(null);
-        console.error("Error fetching profile, response not ok:", data.message);
-        if (
-          response.status === 404 ||
-          data.message?.includes("Không tìm thấy thông tin người dùng")
-        ) {
-          return {
-            needsProfileCreation: true,
-            error: false,
-            user: null,
-            message: data.message || "Không tìm thấy hồ sơ người dùng.",
-          };
-        }
+        console.warn("User profile data missing from API response:", data);
         return {
-          needsProfileCreation: false,
-          error: true,
+          needsProfileCreation: true,
+          error: false,
           user: null,
-          message: data.message,
+          message: data.message || "Không tìm thấy hồ sơ người dùng.",
         };
       }
     } catch (error) {
-      console.error("Fetch profile network/unexpected error:", error);
+      // Axios throws on 4xx/5xx errors
+      // error.response.data contains the server response body
+      const data = error.response?.data;
+      const status = error.response?.status;
+
+      console.error("Error fetching profile:", error);
       setCurrentUser(null);
+
+      if (
+        status === 404 ||
+        data?.message?.includes("Không tìm thấy thông tin người dùng")
+      ) {
+        return {
+          needsProfileCreation: true,
+          error: false,
+          user: null,
+          message: data?.message || "Không tìm thấy hồ sơ người dùng.",
+        };
+      }
+
       return {
         needsProfileCreation: false,
         error: true,
         user: null,
-        message: error.message,
+        message: data?.message || error.message,
       };
     } finally {
       fetchingUserRef.current = false;
@@ -141,44 +134,29 @@ function App() {
 
     fetchingAccountRef.current = true;
     try {
-      const response = await fetch("https://back-end-hk2p.onrender.com/api/accounts/me", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (response.ok) {
-        if (data.account && data.account.id) {
-          setCurrentAccount(data.account);
-          console.log("Fetched account profile:", data.account); // This will now log when fetched
-          return { error: false, account: data.account };
-        } else {
-          setCurrentAccount(null);
-          console.warn("Account profile data missing from API response:", data);
-          return {
-            error: true,
-            account: null,
-            message: data.message || "Không tìm thấy thông tin tài khoản.",
-          };
-        }
+      // Use axiosClient
+      const data = await axiosClient.get("/accounts/me");
+
+      if (data.account && data.account.id) {
+        setCurrentAccount(data.account);
+        console.log("Fetched account profile:", data.account);
+        return { error: false, account: data.account };
       } else {
         setCurrentAccount(null);
-        console.error("Error fetching account, response not ok:", data.message);
+        console.warn("Account profile data missing from API response:", data);
         return {
           error: true,
           account: null,
-          message: data.message,
+          message: data.message || "Không tìm thấy thông tin tài khoản.",
         };
       }
     } catch (error) {
-      console.error("Fetch account network/unexpected error:", error);
+      console.error("Error fetching account:", error);
       setCurrentAccount(null);
       return {
         error: true,
         account: null,
-        message: error.message,
+        message: error.response?.data?.message || error.message,
       };
     } finally {
       fetchingAccountRef.current = false;
@@ -204,7 +182,7 @@ function App() {
         if (accountResult.error) {
           toast.error(
             accountResult.message ||
-              "Không thể tải thông tin tài khoản. Vui lòng đăng nhập lại."
+            "Không thể tải thông tin tài khoản. Vui lòng đăng nhập lại."
           );
           handleLogout();
           setIsInitializing(false); // Stop initializing if account fetch fails and logs out
@@ -220,7 +198,7 @@ function App() {
         } else if (profileResult.error) {
           toast.error(
             profileResult.message ||
-              "Phiên đăng nhập không hợp lệ hoặc có lỗi. Vui lòng đăng nhập lại."
+            "Phiên đăng nhập không hợp lệ hoặc có lỗi. Vui lòng đăng nhập lại."
           );
           handleLogout();
         }
@@ -269,7 +247,7 @@ function App() {
       if (accountResult.error) {
         toast.error(
           accountResult.message ||
-            "Đăng nhập thành công nhưng không thể tải thông tin tài khoản. Vui lòng thử lại."
+          "Đăng nhập thành công nhưng không thể tải thông tin tài khoản. Vui lòng thử lại."
         );
         handleLogout();
         return;
@@ -283,7 +261,7 @@ function App() {
       } else if (profileResult.error) {
         toast.error(
           profileResult.message ||
-            "Đăng nhập thành công nhưng không thể tải hồ sơ. Vui lòng thử lại."
+          "Đăng nhập thành công nhưng không thể tải hồ sơ. Vui lòng thử lại."
         );
         handleLogout();
       } else if (profileResult.user) {
@@ -533,8 +511,8 @@ function App() {
             setCurrentPage={navigate}
           />
         );
-        case path === "/huong-dan":
-          return<InstructPage/>
+      case path === "/huong-dan":
+        return <InstructPage />
 
       case path === "/create-sprint":
         const createSprintCheck = commonAuthProtectedPageCheck();

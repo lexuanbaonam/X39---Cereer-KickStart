@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button, TextField, Box, Typography, Container, Link } from '@mui/material';
 import './Register.css';
 import { toast } from 'react-toastify'; // Import toast
+import axiosClient from '../../api/axiosClient';
 
 const Register = ({ setCurrentPage }) => {
   const [email, setEmail] = useState('');
@@ -26,59 +27,37 @@ const Register = ({ setCurrentPage }) => {
 
     try {
       // Step 1: Register the account
-      const registerResponse = await fetch('https://back-end-hk2p.onrender.com/api/accounts/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          confirmPassword,
-          name,
-          age: parseInt(age),
-          phone,
-        }),
+      const registerData = await axiosClient.post('/accounts/register', {
+        email,
+        password,
+        confirmPassword,
+        name,
+        age: parseInt(age),
+        phone,
       });
 
-      const registerData = await registerResponse.json();
+      console.log('Registration successful:', registerData);
+      toast.success(registerData.message || 'Đăng ký thành công!'); // Use toast.success
 
-      if (registerResponse.ok) {
-        console.log('Registration successful:', registerData);
-        toast.success(registerData.message || 'Đăng ký thành công!'); // Use toast.success
+      // Step 2: If registration is successful, send verification email
+      if (registerData.account && registerData.account.email) {
+        try {
+          const verifyEmailData = await axiosClient.post('/accounts/send-verification', {
+            email: registerData.account.email
+          });
 
-        // Step 2: If registration is successful, send verification email
-        if (registerData.account && registerData.account.email) {
-          try {
-            const verifyEmailResponse = await fetch('https://back-end-hk2p.onrender.com/api/accounts/send-verification', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ email: registerData.account.email }),
-            });
-
-            const verifyEmailData = await verifyEmailResponse.json();
-
-            if (verifyEmailResponse.ok) {
-              console.log('Verification email sent successfully:', verifyEmailData);
-              toast.success('Đăng ký thành công! Vui lòng kiểm tra email của bạn để xác thực tài khoản.'); // Use toast.success
-            } else {
-              console.error('Failed to send verification email:', verifyEmailData);
-              toast.error(verifyEmailData.message || 'Đăng ký thành công nhưng không gửi được email xác thực. Vui lòng thử lại sau.'); // Use toast.error
-            }
-          } catch (verifyEmailError) {
-            console.error('Network error or unexpected issue when sending verification email:', verifyEmailError);
-            toast.error('Đăng ký thành công nhưng gặp lỗi khi gửi email xác thực. Vui lòng thử lại sau.'); // Use toast.error
-          }
+          console.log('Verification email sent successfully:', verifyEmailData);
+          toast.success('Đăng ký thành công! Vui lòng kiểm tra email của bạn để xác thực tài khoản.'); // Use toast.success
+        } catch (verifyEmailError) {
+          console.error('Failed to send verification email:', verifyEmailError);
+          const verifyMsg = verifyEmailError.response?.data?.message || 'Đăng ký thành công nhưng không gửi được email xác thực. Vui lòng thử lại sau.';
+          toast.error(verifyMsg);
         }
-      } else {
-        console.error('Registration failed:', registerData);
-        toast.error(registerData.message || 'Đăng ký thất bại. Vui lòng thử lại.'); // Use toast.error
       }
     } catch (err) {
-      console.error('Network error or unexpected issue:', err);
-      toast.error('Đã xảy ra lỗi. Vui lòng thử lại sau.'); // Use toast.error
+      console.error('Registration failed:', err);
+      const msg = err.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.';
+      toast.error(msg); // Use toast.error
     }
   };
 
@@ -102,7 +81,7 @@ const Register = ({ setCurrentPage }) => {
         <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 2, width: '100%' }}>
           <TextField margin="normal" required fullWidth id="email" label="Email" name="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           <TextField margin="normal" required fullWidth id="name" label="Họ và tên" value={name} onChange={(e) => setName(e.target.value)} />
-          
+
           <TextField margin="normal" required fullWidth id="phone" label="Số điện thoại" value={phone} onChange={(e) => setPhone(e.target.value)} />
           <TextField margin="normal" required fullWidth id="password" label="Mật khẩu" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
           <TextField margin="normal" required fullWidth id="confirmPassword" label="Xác nhận mật khẩu" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
@@ -118,12 +97,13 @@ const Register = ({ setCurrentPage }) => {
             </Typography>
           )}
           */}
-          <Button type="submit" fullWidth variant="contained" sx={{ mt: 2, mb: 1, bgcolor: '#4a90e2', '&:hover': { bgcolor: '#357abd' },}}>
+          <Button type="submit" fullWidth variant="contained" sx={{ mt: 2, mb: 1, bgcolor: '#4a90e2', '&:hover': { bgcolor: '#357abd' }, }}>
             Đăng Ký
           </Button>
           <Link href="/login" onClick={(e) => {
             e.preventDefault();
-            setCurrentPage('/login');}}
+            setCurrentPage('/login');
+          }}
             sx={{ color: '#4a90e2', textDecoration: 'none' }}
           >
             {"Đã có tài khoản? Đăng nhập"}

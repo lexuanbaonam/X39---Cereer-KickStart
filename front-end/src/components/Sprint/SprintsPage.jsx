@@ -10,6 +10,7 @@ import AddIcon from '@mui/icons-material/Add';
 import SaveIcon from '@mui/icons-material/Save';
 import CloseIcon from '@mui/icons-material/Close';
 import { toast } from 'react-toastify';
+import axiosClient from '../../api/axiosClient';
 
 // Ghi chú: Đã xóa các thành phần DatePicker và LocalizationProvider để giải quyết lỗi
 // về date-fns. Thay vào đó, chúng ta sẽ sử dụng TextField với type="date".
@@ -261,31 +262,20 @@ const EditSprintForm = ({ open, handleClose, sprintToEdit, onUpdateSuccess, auth
         setLoading(true);
 
         try {
-            const response = await fetch(`https://back-end-hk2p.onrender.com/api/sprints/${sprintToEdit._id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authToken}`,
-                },
-                body: JSON.stringify({
-                    title,
-                    description,
-                    startDate: new Date(startDate).toISOString(),
-                    endDate: new Date(endDate).toISOString(),
-                }),
+            const data = await axiosClient.put(`/sprints/${sprintToEdit._id}`, {
+                title,
+                description,
+                startDate: new Date(startDate).toISOString(),
+                endDate: new Date(endDate).toISOString(),
             });
 
-            const data = await response.json();
-
-            if (response.ok) {
+            if (data) {
                 toast.success(data.message);
                 onUpdateSuccess();
                 handleClose();
-            } else {
-                toast.error(data.message || 'Lỗi khi cập nhật sprint.');
             }
         } catch (err) {
-            toast.error('Lỗi kết nối khi cập nhật sprint.');
+            toast.error(err.response?.data?.message || 'Lỗi khi cập nhật sprint.');
             console.error('Update sprint error:', err);
         } finally {
             setLoading(false);
@@ -396,25 +386,12 @@ const SprintsPage = ({ authToken, setCurrentPage, currentUser }) => {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch('https://back-end-hk2p.onrender.com/api/sprints/all', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authToken}`,
-                },
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                setSprints(data.sprints);
-            } else {
-                setError(data.message || 'Lỗi khi tải danh sách sprint.');
-                toast.error(data.message || 'Không thể tải sprint.');
-            }
+            const data = await axiosClient.get('/sprints/all');
+            setSprints(data.sprints);
         } catch (err) {
-            setError('Lỗi kết nối hoặc lỗi mạng.');
-            toast.error('Lỗi kết nối đến máy chủ.');
+            const message = err.response?.data?.message || 'Lỗi khi tải danh sách sprint.';
+            setError(message);
+            toast.error(message);
             console.error('Fetch sprints error:', err);
         } finally {
             setLoading(false);
@@ -448,30 +425,17 @@ const SprintsPage = ({ authToken, setCurrentPage, currentUser }) => {
         if (!sprintToDelete) return;
 
         try {
-            const response = await fetch(`https://back-end-hk2p.onrender.com/api/sprints/${sprintToDelete._id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authToken}`,
-                },
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                toast.success(data.message);
-                fetchSprints();
-            } else {
-                toast.error(data.message || 'Lỗi khi xóa sprint.');
-            }
+            const data = await axiosClient.delete(`/sprints/${sprintToDelete._id}`);
+            toast.success(data.message);
+            fetchSprints();
         } catch (err) {
-            toast.error('Lỗi kết nối khi xóa sprint.');
+            toast.error(err.response?.data?.message || 'Lỗi khi xóa sprint.');
             console.error('Delete sprint error:', err);
         } finally {
             handleCloseDeleteDialog();
         }
     };
-    
+
     // Handle edit dialog open
     const handleEditClick = (sprint) => {
         setSprintToEdit(sprint);

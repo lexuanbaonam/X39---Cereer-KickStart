@@ -23,6 +23,7 @@ import {
 } from "@mui/material";
 import ConstructionIcon from "@mui/icons-material/Construction";
 import { toast } from "react-toastify";
+import axiosClient from '../api/axiosClient';
 
 // Styled components based on SprintsPage.jsx
 const Root = styled(Box)({
@@ -125,24 +126,14 @@ const SupportResponsePage = ({ authToken, currentUserId }) => {
   const fetchResponses = async () => {
     setLoading(true);
     try {
-      const res = await fetch("https://back-end-hk2p.onrender.com/api/supports-response", {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      if (!res.ok) throw new Error("Không thể tải dữ liệu yêu cầu hỗ trợ.");
-      const data = await res.json();
+      const data = await axiosClient.get("/supports-response");
 
       // Enrich with user info
       const enriched = await Promise.all(
         data.map(async (resp) => {
           try {
-            const userRes = await fetch(
-              `https://back-end-hk2p.onrender.com/api/users/${resp.createdBy}`,
-              { headers: { Authorization: `Bearer ${authToken}` } }
-            );
-            if (!userRes.ok)
-              throw new Error("Không lấy được thông tin người dùng.");
-            const { user } = await userRes.json();
-            return { ...resp, userInfo: user };
+            const userData = await axiosClient.get(`/users/${resp.createdBy}`);
+            return { ...resp, userInfo: userData.user };
           } catch {
             return { ...resp, userInfo: null };
           }
@@ -151,7 +142,7 @@ const SupportResponsePage = ({ authToken, currentUserId }) => {
 
       setResponses(enriched);
     } catch (error) {
-      toast.error(`Lỗi: ${error.message}`);
+      toast.error(`Lỗi: ${error.response?.data?.message || error.message}`);
     } finally {
       setLoading(false);
     }
@@ -169,26 +160,19 @@ const SupportResponsePage = ({ authToken, currentUserId }) => {
         handledBy: currentUserId,
         handledAt: new Date(),
       };
-      
-      const res = await fetch(
-        `https://back-end-hk2p.onrender.com/api/supports-response/${responseToHandle._id}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify(updateData),
-        }
+
+      const response = await axiosClient.patch(
+        `/supports-response/${responseToHandle._id}`,
+        updateData
       );
-      if (!res.ok) throw new Error("Xử lý yêu cầu thất bại.");
+      // Removed response.ok check because axios throws on error
       toast.success("Xử lý yêu cầu hỗ trợ thành công!");
       setOpenHandleDialog(false);
       setResponseToHandle(null);
       setHandleData({ status: "in_progress", responseMessage: "" });
       fetchResponses();
     } catch (error) {
-      toast.error(`Lỗi: ${error.message}`);
+      toast.error(`Lỗi: ${error.response?.data?.message || error.message}`);
     }
   };
 

@@ -50,10 +50,11 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
 
+import axiosClient from "../api/axiosClient";
+
 // Import CSS
 import "./ProjectsPage.css";
-
-const API_BASE_URL = "https://back-end-hk2p.onrender.com/api";
+// Remove API_BASE_URL
 
 const ProjectsPage = ({ authToken, currentUserId }) => {
   const [projects, setProjects] = useState([]);
@@ -92,20 +93,13 @@ const ProjectsPage = ({ authToken, currentUserId }) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/projects/all`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Không thể tải dự án.");
-      }
+      const data = await axiosClient.get('/projects/all');
       setProjects(data.projects);
     } catch (err) {
       console.error("Lỗi khi tải dự án:", err);
-      setError(err.message);
-      toast.error(`Lỗi: ${err.message}`);
+      const message = err.response?.data?.message || err.message;
+      setError(message);
+      toast.error(`Lỗi: ${message}`);
     } finally {
       setLoading(false);
     }
@@ -114,28 +108,14 @@ const ProjectsPage = ({ authToken, currentUserId }) => {
   const fetchDropdownData = useCallback(async () => {
     setLoadingDropdownData(true);
     try {
-      const usersResponse = await fetch(`${API_BASE_URL}/users/all`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      const usersData = await usersResponse.json();
-      if (!usersResponse.ok)
-        throw new Error(
-          usersData.message || "Không thể tải danh sách người dùng."
-        );
+      const usersData = await axiosClient.get('/users/all');
       setUsers(usersData.users);
 
-      const sprintsResponse = await fetch(`${API_BASE_URL}/sprints/all`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      const sprintsData = await sprintsResponse.json();
-      if (!sprintsResponse.ok)
-        throw new Error(
-          sprintsData.message || "Không thể tải danh sách sprints."
-        );
+      const sprintsData = await axiosClient.get('/sprints/all');
       setSprints(sprintsData.sprints);
     } catch (err) {
       console.error("Lỗi khi tải dữ liệu dropdown:", err);
-      toast.error(`Lỗi khi tải dữ liệu: ${err.message}`);
+      toast.error(`Lỗi khi tải dữ liệu: ${err.response?.data?.message || err.message}`);
     } finally {
       setLoadingDropdownData(false);
     }
@@ -189,29 +169,19 @@ const ProjectsPage = ({ authToken, currentUserId }) => {
         })
         .filter(Boolean);
 
-      const response = await fetch(`${API_BASE_URL}/projects/add`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
-          ...newProject,
-          teamMembers: membersToSend,
-          startDate: dayjs(newProject.startDate).format("YYYY-MM-DD"),
-          endDate: dayjs(newProject.endDate).format("YYYY-MM-DD"),
-        }),
+      await axiosClient.post('/projects/add', {
+        ...newProject,
+        teamMembers: membersToSend,
+        startDate: dayjs(newProject.startDate).format("YYYY-MM-DD"),
+        endDate: dayjs(newProject.endDate).format("YYYY-MM-DD"),
       });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Không thể tạo dự án.");
-      }
+
       toast.success("Dự án đã được tạo thành công!");
       handleCloseCreateDialog();
       fetchProjects();
     } catch (err) {
       console.error("Lỗi khi tạo dự án:", err);
-      toast.error(`Lỗi: ${err.message}`);
+      toast.error(`Lỗi: ${err.response?.data?.message || err.message}`);
     } finally {
       setLoadingCreate(false);
     }
@@ -252,22 +222,12 @@ const ProjectsPage = ({ authToken, currentUserId }) => {
 
   const handleDeleteProject = async (projectId) => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/projects/delete/${projectId}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${authToken}` },
-        }
-      );
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Không thể xóa dự án.");
-      }
-      toast.success("Dự án đã được xóa thành công!");
+      const data = await axiosClient.delete(`/projects/delete/${projectId}`);
+      toast.success(data.message || "Dự án đã được xóa thành công!");
       fetchProjects();
     } catch (err) {
       console.error("Lỗi khi xóa dự án:", err);
-      toast.error(`Lỗi: ${err.message}`);
+      toast.error(`Lỗi: ${err.response?.data?.message || err.message}`);
     }
   };
 
@@ -297,27 +257,14 @@ const ProjectsPage = ({ authToken, currentUserId }) => {
         sprintId: editProject.sprintId,
       };
 
-      const response = await fetch(
-        `${API_BASE_URL}/projects/update/${editProject._id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Không thể cập nhật dự án.");
-      }
+      await axiosClient.put(`/projects/update/${editProject._id}`, payload);
+
       toast.success("Dự án đã được cập nhật thành công!");
       handleCloseEditDialog();
       fetchProjects();
     } catch (err) {
       console.error("Lỗi khi cập nhật dự án:", err);
-      toast.error(`Lỗi: ${err.message}`);
+      toast.error(`Lỗi: ${err.response?.data?.message || err.message}`);
     } finally {
       setLoadingEdit(false);
     }
@@ -346,8 +293,8 @@ const ProjectsPage = ({ authToken, currentUserId }) => {
   const handleOpenAddMembersDialog = (project) => {
     setSelectedProject(project);
     // Lọc ra những user chưa có trong project
-    const availableUsers = users.filter(user => 
-      !project.teamMembers.some(member => 
+    const availableUsers = users.filter(user =>
+      !project.teamMembers.some(member =>
         (member._id || member) === user._id
       )
     );
@@ -385,14 +332,7 @@ const ProjectsPage = ({ authToken, currentUserId }) => {
     setLoadingAddMembers(true);
     try {
       for (const userId of selectedUsersToAdd) {
-        await fetch(`${API_BASE_URL}/projects/add-user/${selectedProject._id}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify({ userId }),
-        });
+        await axiosClient.post(`/projects/add-user/${selectedProject._id}`, { userId });
       }
 
       toast.success("Thêm thành viên vào dự án thành công!");
@@ -400,7 +340,7 @@ const ProjectsPage = ({ authToken, currentUserId }) => {
       fetchProjects(); // Refresh projects list
     } catch (err) {
       console.error("Lỗi khi thêm thành viên:", err);
-      toast.error(`Lỗi: ${err.message}`);
+      toast.error(`Lỗi: ${err.response?.data?.message || err.message}`);
     } finally {
       setLoadingAddMembers(false);
     }
@@ -416,14 +356,7 @@ const ProjectsPage = ({ authToken, currentUserId }) => {
     setLoadingAddSprints(true);
     try {
       for (const sprintId of selectedSprintsToAdd) {
-        await fetch(`${API_BASE_URL}/projects/add-sprint/${selectedProject._id}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify({ sprintId }),
-        });
+        await axiosClient.post(`/projects/add-sprint/${selectedProject._id}`, { sprintId });
       }
 
       toast.success("Thêm sprint vào dự án thành công!");
@@ -431,7 +364,7 @@ const ProjectsPage = ({ authToken, currentUserId }) => {
       fetchProjects(); // Refresh projects list
     } catch (err) {
       console.error("Lỗi khi thêm sprint:", err);
-      toast.error(`Lỗi: ${err.message}`);
+      toast.error(`Lỗi: ${err.response?.data?.message || err.message}`);
     } finally {
       setLoadingAddSprints(false);
     }
@@ -570,8 +503,8 @@ const ProjectsPage = ({ authToken, currentUserId }) => {
                             >
                               {project.startDate
                                 ? new Date(
-                                    project.startDate
-                                  ).toLocaleDateString("vi-VN")
+                                  project.startDate
+                                ).toLocaleDateString("vi-VN")
                                 : "N/A"}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
@@ -583,8 +516,8 @@ const ProjectsPage = ({ authToken, currentUserId }) => {
                             >
                               {project.endDate
                                 ? new Date(project.endDate).toLocaleDateString(
-                                    "vi-VN"
-                                  )
+                                  "vi-VN"
+                                )
                                 : "N/A"}
                             </Typography>
                           </Box>
@@ -919,8 +852,8 @@ const ProjectsPage = ({ authToken, currentUserId }) => {
           <DialogTitle className="projects-styled-dialog-title">👥 Danh sách Thành viên</DialogTitle>
           <DialogContent sx={{ p: 0 }}>
             {selectedProject &&
-            selectedProject.teamMembers &&
-            selectedProject.teamMembers.length > 0 ? (
+              selectedProject.teamMembers &&
+              selectedProject.teamMembers.length > 0 ? (
               <List sx={{ p: 0 }}>
                 {selectedProject.teamMembers.map((member, index) => {
                   const user = users.find(
@@ -1035,8 +968,8 @@ const ProjectsPage = ({ authToken, currentUserId }) => {
                 )}
               >
                 {users
-                  .filter(user => 
-                    selectedProject && !selectedProject.teamMembers.some(member => 
+                  .filter(user =>
+                    selectedProject && !selectedProject.teamMembers.some(member =>
                       (member._id || member) === user._id
                     )
                   )
@@ -1086,8 +1019,8 @@ const ProjectsPage = ({ authToken, currentUserId }) => {
           <DialogTitle className="projects-styled-dialog-title">🚀 Danh sách Sprints</DialogTitle>
           <DialogContent sx={{ p: 0 }}>
             {selectedProject &&
-            selectedProject.sprintId &&
-            selectedProject.sprintId.length > 0 ? (
+              selectedProject.sprintId &&
+              selectedProject.sprintId.length > 0 ? (
               <List sx={{ p: 0 }}>
                 {selectedProject.sprintId.map((sprintId, index) => {
                   const sprint = sprints.find(
@@ -1200,8 +1133,8 @@ const ProjectsPage = ({ authToken, currentUserId }) => {
                 )}
               >
                 {sprints
-                  .filter(sprint => 
-                    selectedProject && !selectedProject.sprintId.some(projectSprint => 
+                  .filter(sprint =>
+                    selectedProject && !selectedProject.sprintId.some(projectSprint =>
                       (projectSprint._id || projectSprint) === sprint._id
                     )
                   )

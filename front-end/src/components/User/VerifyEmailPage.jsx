@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, CircularProgress, Typography, Container } from '@mui/material';
 import { toast } from 'react-toastify';
+import axiosClient from '../../api/axiosClient';
 
 const VerifyEmailPage = ({ token, setCurrentPage, onVerificationSuccess }) => {
   const [isVerifying, setIsVerifying] = useState(true);
@@ -16,35 +17,31 @@ const VerifyEmailPage = ({ token, setCurrentPage, onVerificationSuccess }) => {
     const verifyAccountAndCreateProfile = async () => {
       setIsVerifying(true);
       try {
-        console.log('VerifyEmailPage: Using token in verification URL.',token);
-        const verificationResponse = await fetch(`https://back-end-hk2p.onrender.com/api/accounts/verify-email/${token}`, {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+        console.log('VerifyEmailPage: Using token in verification URL.', token);
+        // Note: verify-email likely returns the same token or a new one?
+        // Checking old code: it uses GET /accounts/verify-email/:token
+        // This endpoint probably doesn't require Authorization header if it uses the token in URL
+        // BUT axiosClient adds Authorization header if token is in localStorage.
+        // Here, the user might not be logged in yet.
+        // If the endpoint is public (which verify email usually is), axiosClient is fine.
+        // However, axiosClient sets base URL to /api.
 
-        const verificationData = await verificationResponse.json();
+        const verificationData = await axiosClient.get(`/accounts/verify-email/${token}`);
 
-        if (verificationResponse.ok) {
-          toast.success(verificationData.message || 'Xác thực tài khoản thành công!');
+        toast.success(verificationData.message || 'Xác thực tài khoản thành công!');
 
-          const authToken = verificationData.token;
-          if (authToken) {
-            console.log('VerifyEmailPage: Auth token received after verification.');
-            onVerificationSuccess(authToken, verificationData.account);
-          } else {
-            toast.info('Xác thực thành công. Vui lòng đăng nhập.');
-            setTimeout(() => setCurrentPage('/login'), 3000);
-          }
+        const authToken = verificationData.token;
+        if (authToken) {
+          console.log('VerifyEmailPage: Auth token received after verification.');
+          onVerificationSuccess(authToken, verificationData.account);
         } else {
-          toast.error(verificationData.message || 'Xác thực tài khoản thất bại.');
+          toast.info('Xác thực thành công. Vui lòng đăng nhập.');
           setTimeout(() => setCurrentPage('/login'), 3000);
         }
       } catch (error) {
+        const errorData = error.response?.data;
         console.error('Lỗi xác thực email:', error);
-        toast.error('Đã xảy ra lỗi khi xác thực email. Vui lòng thử lại.');
+        toast.error(errorData?.message || 'Đã xảy ra lỗi khi xác thực email.');
         setTimeout(() => setCurrentPage('/login'), 3000);
       } finally {
         setIsVerifying(false); // Stop verifying

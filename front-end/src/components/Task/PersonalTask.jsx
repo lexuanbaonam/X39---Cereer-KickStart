@@ -37,8 +37,8 @@ import {
   Info as InfoIcon, // For assignees popup
 } from "@mui/icons-material";
 import { toast } from "react-toastify";
+import axiosClient from "../../api/axiosClient";
 
-const API_BASE_URL = "https://back-end-hk2p.onrender.com/api";
 const LOADING_DELAY_MS = 1000;
 
 // Styled Components (Adapted from SprintsPage.jsx)
@@ -329,15 +329,7 @@ function PersonalTask({ authToken, setCurrentPage, currentUserId }) {
 
     setLoadingSprints(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/sprints/all`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Không thể tải danh sách sprint");
-      }
-
-      const data = await response.json();
+      const data = await axiosClient.get('/sprints/all');
       const sprintArray = data.sprints;
       if (Array.isArray(sprintArray)) {
         setSprints(sprintArray);
@@ -369,15 +361,7 @@ function PersonalTask({ authToken, setCurrentPage, currentUserId }) {
 
     setLoadingDepartments(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/departs/all`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Không thể tải danh sách phòng ban");
-      }
-
-      const responseData = await response.json();
+      const responseData = await axiosClient.get('/departs/all');
       const departmentArray = responseData.data;
       if (Array.isArray(departmentArray)) {
         setDepartments(departmentArray);
@@ -409,15 +393,7 @@ function PersonalTask({ authToken, setCurrentPage, currentUserId }) {
 
     setLoadingMyTasks(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/tasks/my-tasks`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Không thể tải danh sách task cá nhân");
-      }
-
-      const data = await response.json();
+      const data = await axiosClient.get('/tasks/my-tasks');
       const tasksArray = data.tasks;
       if (Array.isArray(tasksArray)) {
         setMyTasks(tasksArray);
@@ -444,15 +420,7 @@ function PersonalTask({ authToken, setCurrentPage, currentUserId }) {
     }
     setLoadingUsers(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/users/all`, { // Assuming an API endpoint to get all users
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Không thể tải danh sách người dùng");
-      }
-      const data = await response.json();
-      // Assuming data.users contains an array of user objects with _id and name
+      const data = await axiosClient.get('/users/all');
       if (Array.isArray(data.users)) {
         setUsers(data.users);
       } else {
@@ -505,35 +473,20 @@ function PersonalTask({ authToken, setCurrentPage, currentUserId }) {
 
     setLoadingTaskCreation(true);
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/tasks/create`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify({
-            departId: selectedDepartId,
-            assignees: [currentUserId], // Gán cho chính người tạo ban đầu
-            title: taskTitle,
-            description: taskDescription,
-            sprintId: selectedSprintId,
-          }),
-        }
-      );
+      await axiosClient.post('/tasks/create', {
+        departId: selectedDepartId,
+        assignees: [currentUserId], // Gán cho chính người tạo ban đầu
+        title: taskTitle,
+        description: taskDescription,
+        sprintId: selectedSprintId,
+      });
 
-      const data = await response.json();
-      if (response.status === 201) {
-        toast.success("Tạo task thành công!");
-        handleCloseForm();
-        fetchMyTasks();
-      } else {
-        toast.error(`Lỗi khi tạo task: ${data.message || "Lỗi không xác định"}`);
-      }
+      toast.success("Tạo task thành công!");
+      handleCloseForm();
+      fetchMyTasks();
     } catch (err) {
       console.error("Lỗi khi tạo task:", err);
-      toast.error(`Lỗi khi tạo task: ${err.message}`);
+      toast.error(`Lỗi khi tạo task: ${err.response?.data?.message || err.message}`);
     } finally {
       setLoadingTaskCreation(false);
     }
@@ -548,23 +501,12 @@ function PersonalTask({ authToken, setCurrentPage, currentUserId }) {
 
     setDeletingTaskId(taskId);
     try {
-      const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/delete`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-
-      if (response.ok) {
-        toast.success("Xóa task thành công!");
-        fetchMyTasks();
-      } else {
-        const errorData = await response.json();
-        toast.error(`Lỗi khi xóa task: ${errorData.message || "Lỗi không xác định"}`);
-      }
+      await axiosClient.delete(`/tasks/${taskId}/delete`);
+      toast.success("Xóa task thành công!");
+      fetchMyTasks();
     } catch (err) {
       console.error("Lỗi khi xóa task:", err);
-      toast.error(`Lỗi khi xóa task: ${err.message}`);
+      toast.error(`Lỗi khi xóa task: ${err.response?.data?.message || err.message}`);
     } finally {
       setDeletingTaskId(null);
     }
@@ -609,37 +551,22 @@ function PersonalTask({ authToken, setCurrentPage, currentUserId }) {
 
     setLoadingTaskUpdate(true);
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/tasks/${editingTask._id}/update`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify({
-            title: editTaskTitle,
-            description: editTaskDescription,
-            sprintId: editSelectedSprintId,
-            departId: editSelectedDepartId,
-            status: editTaskStatus.toUpperCase(),
-            priority: editTaskPriority.toUpperCase(),
-            assignees: editSelectedAssignees, // Gửi mảng các ID người dùng đã chọn
-          }),
-        }
-      );
+      await axiosClient.put(`/tasks/${editingTask._id}/update`, {
+        title: editTaskTitle,
+        description: editTaskDescription,
+        sprintId: editSelectedSprintId,
+        departId: editSelectedDepartId,
+        status: editTaskStatus.toUpperCase(),
+        priority: editTaskPriority.toUpperCase(),
+        assignees: editSelectedAssignees, // Gửi mảng các ID người dùng đã chọn
+      });
 
-      const data = await response.json();
-      if (response.ok) {
-        toast.success("Cập nhật task thành công!");
-        handleCloseEditForm();
-        fetchMyTasks();
-      } else {
-        toast.error(`Lỗi khi cập nhật task: ${data.message || "Lỗi không xác định"}`);
-      }
+      toast.success("Cập nhật task thành công!");
+      handleCloseEditForm();
+      fetchMyTasks();
     } catch (err) {
       console.error("Lỗi khi cập nhật task:", err);
-      toast.error(`Lỗi khi cập nhật task: ${err.message}`);
+      toast.error(`Lỗi khi cập nhật task: ${err.response?.data?.message || err.message}`);
     } finally {
       setLoadingTaskUpdate(false);
     }

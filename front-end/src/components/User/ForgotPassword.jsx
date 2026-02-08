@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button, TextField, Box, Typography, Container, Link } from '@mui/material';
 import { toast } from 'react-toastify';
+import axiosClient from '../../api/axiosClient';
 import './ResetPassword.css'; // Reusing the CSS from ResetPassword for styling consistency
 
 const ForgotPassword = ({ setCurrentPage }) => {
@@ -12,25 +13,13 @@ const ForgotPassword = ({ setCurrentPage }) => {
     setLoading(true);
 
     try {
-      const response = await fetch('https://back-end-hk2p.onrender.com/api/accounts/forgot-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
+      const data = await axiosClient.post('/accounts/forgot-password', { email });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success(data.message || 'Một liên kết đặt lại mật khẩu đã được gửi đến email của bạn.');
-        setCurrentPage('/login'); // Redirect to login after successful request
-      } else {
-        toast.error(data.message || 'Yêu cầu đặt lại mật khẩu thất bại. Vui lòng kiểm tra lại email.');
-      }
+      toast.success(data.message || 'Một liên kết đặt lại mật khẩu đã được gửi đến email của bạn.');
+      setCurrentPage('/login'); // Redirect to login after successful request
     } catch (err) {
       console.error('Network error or unexpected issue:', err);
-      toast.error('Đã xảy ra lỗi. Vui lòng thử lại sau.');
+      toast.error(err.response?.data?.message || 'Đã xảy ra lỗi. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);
     }
@@ -59,7 +48,7 @@ const ForgotPassword = ({ setCurrentPage }) => {
             type="submit"
             fullWidth
             variant="contained"
-            sx={{ mt: 2, mb: 1, bgcolor: '#4a90e2', '&:hover': { bgcolor: '#357abd' },}}
+            sx={{ mt: 2, mb: 1, bgcolor: '#4a90e2', '&:hover': { bgcolor: '#357abd' }, }}
             disabled={loading}
           >
             {loading ? 'Đang gửi...' : 'Gửi Yêu Cầu Đặt Lại'}
@@ -68,7 +57,7 @@ const ForgotPassword = ({ setCurrentPage }) => {
             e.preventDefault();
             setCurrentPage('/login');
           }}
-          sx={{ color: '#4a90e2', textDecoration: 'none', }}>
+            sx={{ color: '#4a90e2', textDecoration: 'none', }}>
             {"Quay lại Đăng nhập"}
           </Link>
         </Box>
